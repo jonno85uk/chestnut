@@ -13,30 +13,28 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- *along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "footage.h"
 
-
-#include "io/previewgenerator.h"
-#include "project/clip.h"
-#include "panels/project.h"
+#include <mediahandling/mediahandling.h>
 
 extern "C" {
 #include <libavformat/avformat.h>
 }
 
+#include "io/previewgenerator.h"
+#include "project/clip.h"
+#include "panels/project.h"
+
+
 using project::FootageStreamPtr;
-
-Footage::Footage() : Footage(nullptr)
-{
-
-}
+using media_handling::MediaProperty;
 
 
 Footage::Footage(const Footage& cpy)
   : ProjectItem(cpy),
-    url(cpy.url),
     length_(cpy.length_),
     video_tracks(cpy.video_tracks),
     audio_tracks(cpy.audio_tracks),
@@ -50,6 +48,7 @@ Footage::Footage(const Footage& cpy)
     using_inout(cpy.using_inout),
     ready_(cpy.ready_.load()),
     has_preview_(cpy.has_preview_.load()),
+    url_(cpy.url_),
     parent_mda_(/*cpy.parent_mda_*/) // this parent is of the wrong media object
 {
 
@@ -57,6 +56,14 @@ Footage::Footage(const Footage& cpy)
 
 Footage::Footage(const std::shared_ptr<Media>& parent) : parent_mda_(parent)
 {
+}
+
+Footage::Footage(QString url, const std::shared_ptr<Media>& parent)
+  : url_(std::move(url)),
+    parent_mda_(parent)
+{
+  media_source_ = media_handling::createSource(url_.toStdString());
+  parseStreams();
 }
 
 void Footage::reset()
@@ -85,6 +92,113 @@ bool Footage::isImage() const
 void Footage::setParent(std::shared_ptr<Media> mda)
 {
   parent_mda_ = mda;
+}
+
+/**
+ * @brief   Retrieve the location of the footage's source
+ * @return  Path
+ */
+QString Footage::location() const
+{
+  return url_;
+}
+
+
+void Footage::parseStreams()
+{
+  if (!media_source_) {
+    qWarning() << "No media to parse";
+  }
+
+  video_tracks.clear();
+  for (auto[key, stream] : media_source_->visualStreams()) {
+    auto ftg_stream = std::make_shared<project::FootageStream>(stream);
+    video_tracks.insert(key, ftg_stream);
+  }
+
+  audio_tracks.clear();
+
+  for (auto[key, stream] : media_source_->audioStreams()) {
+    auto ftg_stream = std::make_shared<project::FootageStream>(stream);
+    audio_tracks.insert(key, ftg_stream);
+  }
+
+  bool is_okay = false;
+  length_ = media_source_->property<int64_t>(MediaProperty::DURATION, is_okay);
+  if (!is_okay) {
+    qWarning() << "Failed to retrieve footage duration";
+  }
+
+
+  //    gsl::span<AVStream*> streams(fmt_ctx->streams, fmt_ctx->nb_streams);
+  //    for (int i=0; i < streams.size(); ++i) {
+  //      AVStream* const stream = streams.at(i);
+  //      if ( (stream == nullptr) || (stream->codecpar == nullptr) ) {
+  //        qCritical() << "AV Stream instance(s) are null";
+  //        continue;
+  //      }
+  //      // Find the decoder for the video stream
+  //      if (avcodec_find_decoder(stream->codecpar->codec_id) == nullptr) {
+  //        qCritical() << "Unsupported codec in stream" << i << "of file" << ftg->name();
+  //      } else {
+  //        // TODO: use mediastream
+  //        auto ms = std::make_shared<FootageStream>();
+  //        ms->preview_done = false;
+  //        ms->file_index = i;
+  //        ms->enabled = true;
+
+  //        bool append = false;
+
+  //        if ( (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+  //            && (stream->codecpar->width > 0)
+  //            && (stream->codecpar->height > 0) ) {
+  //          ms->type_ = StreamType::VIDEO;
+  //          // heuristic to determine if video is a still image
+  //          if ( (stream->avg_frame_rate.den == 0)
+  //              && (stream->codecpar->codec_id != AV_CODEC_ID_DNXHD) ) { // silly hack but this is the only scenario i've seen this
+  //            if (ftg->location().contains('%')) {
+  //              // must be an image sequence
+  //              ms->infinite_length = false;
+  //              ms->video_frame_rate = 25;
+  //            } else {
+  //              ms->infinite_length = true;
+  //              contains_still_image = true;
+  //              ms->video_frame_rate = 0;
+  //            }
+  //          } else {
+  //            ms->infinite_length = false;
+  //            // using ffmpeg's built-in heuristic
+  //            ms->video_frame_rate = av_q2d(av_guess_frame_rate(fmt_ctx, stream, nullptr));
+  //          }
+
+  //          ms->video_width = stream->codecpar->width;
+  //          ms->video_height = stream->codecpar->height;
+  //          append = true;
+  //        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+  //          ms->type_ = StreamType::AUDIO;
+  //          ms->audio_channels = stream->codecpar->channels;
+  //          ms->audio_layout = stream->codecpar->channel_layout;
+  //          ms->audio_frequency = stream->codecpar->sample_rate;
+
+  //          append = true;
+  //        }
+
+  //        if (append) {
+  //          QVector<FootageStreamPtr>& stream_list = (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+  //                                                   ? ftg->audio_tracks : ftg->video_tracks;
+  //          for (int j=0;j<stream_list.size();j++) {
+  //            if (stream_list.at(j)->file_index == i) {
+  //              stream_list[j] = ms;
+  //              append = false;
+  //            }
+  //          }
+  //          if (append) {
+  //            stream_list.append(ms);
+  //          }
+  //        }
+  //      }
+  //    }
+  //    ftg->length_ = fmt_ctx->duration;
 }
 
 bool Footage::load(QXmlStreamReader& stream)
@@ -129,7 +243,8 @@ bool Footage::load(QXmlStreamReader& stream)
     } else if (elem_name == "name") {
       setName(stream.readElementText());
     } else if (elem_name == "url") {
-      url = stream.readElementText();
+      url_ = stream.readElementText();
+      media_source_ = media_handling::createSource(url_.toStdString());
     } else if (elem_name == "duration") {
       length_ = stream.readElementText().toLong();
     } else if (elem_name == "marker") {
@@ -144,6 +259,18 @@ bool Footage::load(QXmlStreamReader& stream)
       qWarning() << "Unhandled element" << elem_name;
       stream.skipCurrentElement();
     }
+  }
+
+  for (int i = 0; i < audio_tracks.size(); ++i) {
+    auto strm(media_source_->audioStream(i));
+    Q_ASSERT(strm);
+    audio_tracks.at(i)->setStreamInfo(strm);
+  }
+
+  for (int i = 0; i < video_tracks.size(); ++i) {
+    auto strm(media_source_->visualStream(i));
+    Q_ASSERT(strm);
+    video_tracks.at(i)->setStreamInfo(strm);
   }
 
   //TODO: check what this does
@@ -187,7 +314,7 @@ bool Footage::save(QXmlStreamWriter& stream) const
   stream.writeAttribute("out", QString::number(out));
 
   stream.writeTextElement("name", name_);
-  stream.writeTextElement("url", QDir(url).absolutePath());
+  stream.writeTextElement("url", QDir(url_).absolutePath());
   stream.writeTextElement("duration", QString::number(length_));
   stream.writeTextElement("speed", QString::number(speed_));
 

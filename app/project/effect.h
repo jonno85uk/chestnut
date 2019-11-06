@@ -31,12 +31,12 @@
 #include <memory>
 #include <random>
 #include <set>
+#include <mediahandling/gsl-lite.hpp>
 
 #include "effectfield.h"
 #include "effectrow.h"
 #include "effectgizmo.h"
 #include "project/sequenceitem.h"
-#include "gsl/span"
 #include "project/ixmlstreamer.h"
 
 class CollapsibleWidget;

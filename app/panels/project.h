@@ -75,7 +75,15 @@ public:
 
     bool is_focused() const;
     void clear();
-    MediaPtr new_sequence(ComboAction *ca, SequencePtr  s, bool open, MediaPtr parentItem);
+    /**
+     * @brief               Create a new sequence
+     * @param ca            undo history manager object
+     * @param seq           sequence to copy
+     * @param open          open sequence on creation
+     * @param parentItem    the parent for the created item
+     * @return              A media item for the model
+     */
+    MediaPtr newSequence(ComboAction *ca, SequencePtr seq, const bool open, MediaPtr parentItem) const;
     QString get_next_sequence_name(QString start="");
     void process_file_list(QStringList& files, bool recursive = false, MediaPtr replace = nullptr, MediaPtr parent = nullptr);
     void replace_media(MediaPtr item, QString filename);

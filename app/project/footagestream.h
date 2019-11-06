@@ -22,6 +22,7 @@
 #include <memory>
 #include <QImage>
 #include <QIcon>
+#include <mediahandling/imediastream.h>
 
 #include "project/ixmlstreamer.h"
 
@@ -42,30 +43,41 @@ namespace project {
 
   class FootageStream : public project::IXMLStreamer {
     public:
-      FootageStream() = default;
+      FootageStream();
+      explicit FootageStream(media_handling::MediaStreamPtr stream_info);
+
+      FootageStream(const FootageStream& cpy) = delete;
+      FootageStream(const FootageStream&& cpy) = delete;
+      FootageStream& operator=(const FootageStream& rhs) = delete;
+      FootageStream& operator=(const FootageStream&& rhs) = delete;
 
       void make_square_thumb();
+      void setStreamInfo(media_handling::MediaStreamPtr stream_info);
+      ScanMethod fieldOrder() const;
+
       virtual bool load(QXmlStreamReader& stream) override;
       virtual bool save(QXmlStreamWriter& stream) const override;
 
-      int file_index = -1;
-      int video_width = -1;
-      int video_height = -1;
-      bool infinite_length = false;
-      double video_frame_rate = 0.0;
-      ScanMethod video_interlacing = ScanMethod::UNKNOWN;
-      ScanMethod video_auto_interlacing = ScanMethod::UNKNOWN;
-      int audio_channels = -1;
-      int audio_layout = -1;
-      int audio_frequency = -1;
-      bool enabled = false;
+      int file_index {-1};
+      int video_width {-1};
+      int video_height {-1};
+      bool infinite_length {false};
+      double video_frame_rate {0.0};
+      int audio_channels {-1};
+      int audio_layout {-1};
+      int audio_frequency {-1};
+      bool enabled {true};
 
       // preview thumbnail/waveform
-      bool preview_done = false;
+      bool preview_done {false};
       QImage video_preview;
       QIcon video_preview_square;
       QVector<char> audio_preview;
       StreamType type_{StreamType::UNKNOWN};
+    private:
+      media_handling::MediaStreamPtr stream_info_{nullptr};
+
+      void initialise(const media_handling::IMediaStream& stream);
   };
   using FootageStreamPtr = std::shared_ptr<FootageStream>;
   using FootageStreamWPtr = std::weak_ptr<FootageStream>;

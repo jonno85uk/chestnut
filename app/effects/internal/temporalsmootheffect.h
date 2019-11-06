@@ -19,8 +19,8 @@
 #ifndef TEMPORALSMOOTHEFFECT_H
 #define TEMPORALSMOOTHEFFECT_H
 
+#include <mediahandling/gsl-lite.hpp>
 #include "project/effect.h"
-#include "gsl/span"
 
 using VectorSpanBytes = QVector<gsl::span<uint8_t>>;
 

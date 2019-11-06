@@ -19,8 +19,7 @@
 #include "temporalsmootheffect.h"
 #include <omp.h>
 #include <cmath>
-
-#include "gsl/span"
+#include <mediahandling/gsl-lite.hpp>
 
 constexpr size_t MEDIAN_LENGTH_LIMIT = 10;
 

@@ -1759,7 +1759,7 @@ void MainWindow::nest()
     }
 
     // add sequence to project
-    MediaPtr m = PanelManager::projectViewer().new_sequence(ca, s, false, nullptr);
+    MediaPtr m = PanelManager::projectViewer().newSequence(ca, s, false, nullptr);
 
     // add nested sequence to active sequence
     QVector<MediaPtr> media_list;

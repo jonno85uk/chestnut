@@ -22,6 +22,7 @@
 #include <QString>
 #include <QVector>
 #include <QDir>
+#include <mediahandling/imediasource.h>
 
 #include "project/projectitem.h"
 #include "project/ixmlstreamer.h"
@@ -40,7 +41,6 @@ using FootageWPtr = std::weak_ptr<Footage>;
 
 class Footage : public project::ProjectItem {
   public:
-    QString url;
     int64_t length_{0};
     QVector<project::FootageStreamPtr> video_tracks;
     QVector<project::FootageStreamPtr> audio_tracks;
@@ -53,18 +53,20 @@ class Footage : public project::ProjectItem {
 
     PreviewGenerator* preview_gen{nullptr};
 
-    // workarea
     long in{0};
     long out{0};
-    bool using_inout{false}; // TODO: could be inferred if in/out were optional
+    bool using_inout{false};
 
-    std::atomic_bool ready_{false};
-    std::atomic_bool has_preview_{false};
+    std::atomic_bool ready_; /*{false};*/
+    std::atomic_bool has_preview_; /*{false};*/
 
-    Footage();
+    Footage()
+    {
+
+    }
     explicit Footage(const std::shared_ptr<Media>& parent);
+    Footage(QString url, const std::shared_ptr<Media>& parent);
     Footage(const Footage& cpy);
-
 
     /**
      * @brief Obtain the length of the footage, ignoring any in/out points
@@ -88,15 +90,26 @@ class Footage : public project::ProjectItem {
     void reset();
     bool isImage() const;
     void setParent(std::shared_ptr<Media> mda);
+    /**
+     * @brief   Retrieve the location of the footage's source
+     * @return  Path
+     */
+    QString location() const;
+
+    /**
+     * @brief Read the footage and extract the streams
+     */
+    void parseStreams();
 
     virtual bool load(QXmlStreamReader& stream) override;
     virtual bool save(QXmlStreamWriter& stream) const override;
   private:
     friend class FootageTest;
-    project::FootageStreamPtr get_stream_from_file_index(const bool video, const int index);
-
+    QString url_;
     std::weak_ptr<Media> parent_mda_;
+    media_handling::MediaSourcePtr media_source_ {nullptr};
 
+    project::FootageStreamPtr get_stream_from_file_index(const bool video, const int index);
 };
 
 #endif // FOOTAGE_H

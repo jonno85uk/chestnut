@@ -572,7 +572,7 @@ ReplaceMediaCommand::ReplaceMediaCommand(MediaPtr i, QString s) :
   new_filename(std::move(s)),
   old_project_changed(MainWindow::instance().isWindowModified())
 {
-  old_filename = item->object<Footage>()->url;
+  old_filename = item->object<Footage>()->location();
 }
 
 

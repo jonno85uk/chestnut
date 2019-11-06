@@ -600,32 +600,33 @@ void insert_clips(ComboAction* ca)
 
 void TimelineWidget::dropEvent(QDropEvent* event)
 {
-  if (PanelManager::timeLine().importing && !PanelManager::timeLine().ghosts.empty()) {
-    event->acceptProposedAction();
-
-    auto ca = new ComboAction();
-
-    auto working_sequence = global::sequence;
-
-    // if we're dropping into nothing, create a new sequences based on the clip being dragged
-    if (working_sequence == nullptr) {
-      working_sequence = self_created_sequence;
-      PanelManager::projectViewer().new_sequence(ca, self_created_sequence, true, nullptr);
-      self_created_sequence = nullptr;
-    } else if (event->keyboardModifiers() & Qt::ControlModifier) {
-      insert_clips(ca);
-    } else {
-      deleteAreaUnderGhosts(ca, PanelManager::timeLine(), working_sequence);
-    }
-
-    PanelManager::timeLine().addClipsFromGhosts(ca, working_sequence);
-
-    e_undo_stack.push(ca);
-
-    setFocus();
-
-    PanelManager::refreshPanels(true);
+  if (!PanelManager::timeLine().importing || PanelManager::timeLine().ghosts.empty()) {
+    return;
   }
+  event->acceptProposedAction();
+
+  auto ca = new ComboAction();
+  auto working_sequence = global::sequence;
+
+  if (working_sequence == nullptr) {
+    // if we're dropping into nothing, create a new sequence based on the clip being dragged
+    qInfo() << "Creating new sequence based on clip dropped on timeline";
+    working_sequence = self_created_sequence;
+    PanelManager::projectViewer().newSequence(ca, self_created_sequence, true, nullptr);
+    self_created_sequence = nullptr;
+  } else if (event->keyboardModifiers() & Qt::ControlModifier) {
+    insert_clips(ca);
+  } else {
+    deleteAreaUnderGhosts(ca, PanelManager::timeLine(), working_sequence);
+  }
+
+  PanelManager::timeLine().addClipsFromGhosts(ca, working_sequence);
+
+  e_undo_stack.push(ca);
+
+  setFocus();
+
+  PanelManager::refreshPanels(true);
 }
 
 void TimelineWidget::mouseDoubleClickEvent(QMouseEvent *event)

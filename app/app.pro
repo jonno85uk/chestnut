@@ -227,10 +227,6 @@ HEADERS += \
     project/projectfilter.h \
     project/timelineinfo.h \
     effects/internal/temporalsmootheffect.h \
-    gsl/span \
-    gsl/gsl_assert \
-    gsl/gsl_byte \
-    gsl/gsl_util \
     panels/histogramviewer.h \
     ui/histogramwidget.h \
     ui/colorscopewidget.h \
@@ -238,15 +234,6 @@ HEADERS += \
     io/colorconversions.h \
     panels/panelmanager.h \
     effects/internal/diptocolourtransition.h \
-    gsl/gsl \
-    gsl/gsl_algorithm \
-    gsl/gsl_assert \
-    gsl/gsl_byte \
-    gsl/gsl_util \
-    gsl/multi_span \
-    gsl/pointers \
-    gsl/span \
-    gsl/string_span \
     ui/Forms/markersviewer.h \
     ui/Forms/markerwidget.h \
     project/ixmlstreamer.h \

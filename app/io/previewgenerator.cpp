@@ -28,6 +28,7 @@
 #include <QDateTime>
 #include <QMimeType>
 #include <QMimeDatabase>
+#include <mediahandling/gsl-lite.hpp>
 
 #include "project/media.h"
 #include "project/footage.h"
@@ -35,7 +36,6 @@
 #include "panels/project.h"
 #include "io/config.h"
 #include "io/path.h"
-#include "gsl/span"
 #include "debug.h"
 
 
@@ -94,81 +94,81 @@ PreviewGenerator::~PreviewGenerator()
 void PreviewGenerator::parse_media()
 {
   if (auto ftg = footage.lock()) {
+
+    // FIXME: all of this until "if (fmt_ctx->duration == INT64_MIN) {" should be done in Footage,
+    // god knows why it's here. has nothing to do with previews
     // detect video/audio streams in file
-    gsl::span<AVStream*> streams(fmt_ctx->streams, fmt_ctx->nb_streams);
-    for (int i=0; i < streams.size(); ++i) {
-      AVStream* const stream = streams.at(i);
-      if ( (stream == nullptr) || (stream->codecpar == nullptr) ) {
-        qCritical() << "AV Stream instance(s) are null";
-        continue;
-      }
-      // Find the decoder for the video stream
-      if (avcodec_find_decoder(stream->codecpar->codec_id) == nullptr) {
-        qCritical() << "Unsupported codec in stream" << i << "of file" << ftg->name();
-      } else {
-        auto ms = std::make_shared<FootageStream>();
-        ms->preview_done = false;
-        ms->file_index = i;
-        ms->enabled = true;
+    //    gsl::span<AVStream*> streams(fmt_ctx->streams, fmt_ctx->nb_streams);
+    //    for (int i=0; i < streams.size(); ++i) {
+    //      AVStream* const stream = streams.at(i);
+    //      if ( (stream == nullptr) || (stream->codecpar == nullptr) ) {
+    //        qCritical() << "AV Stream instance(s) are null";
+    //        continue;
+    //      }
+    //      // Find the decoder for the video stream
+    //      if (avcodec_find_decoder(stream->codecpar->codec_id) == nullptr) {
+    //        qCritical() << "Unsupported codec in stream" << i << "of file" << ftg->name();
+    //      } else {
+    //        // TODO: use mediastream
+    //        auto ms = std::make_shared<FootageStream>();
+    //        ms->preview_done = false;
+    //        ms->file_index = i;
+    //        ms->enabled = true;
 
-        bool append = false;
+    //        bool append = false;
 
-        if (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO
-            && stream->codecpar->width > 0
-            && stream->codecpar->height > 0) {
-          ms->type_ = StreamType::VIDEO;
-          // heuristic to determine if video is a still image
-          if (stream->avg_frame_rate.den == 0
-              && stream->codecpar->codec_id != AV_CODEC_ID_DNXHD) { // silly hack but this is the only scenario i've seen this
-            if (ftg->url.contains('%')) {
-              // must be an image sequence
-              ms->infinite_length = false;
-              ms->video_frame_rate = 25;
-            } else {
-              ms->infinite_length = true;
-              contains_still_image = true;
-              ms->video_frame_rate = 0;
-            }
-          } else {
-            ms->infinite_length = false;
+    //        if ( (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    //            && (stream->codecpar->width > 0)
+    //            && (stream->codecpar->height > 0) ) {
+    //          ms->type_ = StreamType::VIDEO;
+    //          // heuristic to determine if video is a still image
+    //          if ( (stream->avg_frame_rate.den == 0)
+    //              && (stream->codecpar->codec_id != AV_CODEC_ID_DNXHD) ) { // silly hack but this is the only scenario i've seen this
+    //            if (ftg->location().contains('%')) {
+    //              // must be an image sequence
+    //              ms->infinite_length = false;
+    //              ms->video_frame_rate = 25;
+    //            } else {
+    //              ms->infinite_length = true;
+    //              contains_still_image = true;
+    //              ms->video_frame_rate = 0;
+    //            }
+    //          } else {
+    //            ms->infinite_length = false;
+    //            // using ffmpeg's built-in heuristic
+    //            ms->video_frame_rate = av_q2d(av_guess_frame_rate(fmt_ctx, stream, nullptr));
+    //          }
 
-            // using ffmpeg's built-in heuristic
-            ms->video_frame_rate = av_q2d(av_guess_frame_rate(fmt_ctx, stream, nullptr));
-          }
+    //          ms->video_width = stream->codecpar->width;
+    //          ms->video_height = stream->codecpar->height;
+    //          append = true;
+    //        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+    //          ms->type_ = StreamType::AUDIO;
+    //          ms->audio_channels = stream->codecpar->channels;
+    //          ms->audio_layout = stream->codecpar->channel_layout;
+    //          ms->audio_frequency = stream->codecpar->sample_rate;
 
-          ms->video_width = stream->codecpar->width;
-          ms->video_height = stream->codecpar->height;
+    //          append = true;
+    //        }
 
-          // default value, we get the true value later in generate_waveform()
-          ms->video_auto_interlacing = ScanMethod::UNKNOWN;
-          ms->video_interlacing = ScanMethod::UNKNOWN;
+    //        if (append) {
+    //          QVector<FootageStreamPtr>& stream_list = (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    //                                                   ? ftg->audio_tracks : ftg->video_tracks;
+    //          for (int j=0;j<stream_list.size();j++) {
+    //            if (stream_list.at(j)->file_index == i) {
+    //              stream_list[j] = ms;
+    //              append = false;
+    //            }
+    //          }
+    //          if (append) {
+    //            stream_list.append(ms);
+    //          }
+    //        }
+    //      }
+    //    }
+    //    ftg->length_ = fmt_ctx->duration;
 
-          append = true;
-        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-          ms->type_ = StreamType::AUDIO;
-          ms->audio_channels = stream->codecpar->channels;
-          ms->audio_layout = stream->codecpar->channel_layout;
-          ms->audio_frequency = stream->codecpar->sample_rate;
 
-          append = true;
-        }
-
-        if (append) {
-          QVector<FootageStreamPtr>& stream_list = (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-                                                   ? ftg->audio_tracks : ftg->video_tracks;
-          for (int j=0;j<stream_list.size();j++) {
-            if (stream_list.at(j)->file_index == i) {
-              stream_list[j] = ms;
-              append = false;
-            }
-          }
-          if (append) {
-            stream_list.append(ms);
-          }
-        }
-      }
-    }
-    ftg->length_ = fmt_ctx->duration;
 
     if (fmt_ctx->duration == INT64_MIN) {
       retrieve_duration = true;
@@ -189,7 +189,7 @@ bool PreviewGenerator::retrieve_preview(const QString& hash)
 
   bool found = true;
   if (auto ftg = footage.lock()) {
-    for (auto stream: ftg->video_tracks) {
+    for (auto& stream: ftg->video_tracks) {
       auto thumb_path = get_thumbnail_path(hash, stream);
       QFile f(thumb_path);
       if (f.exists() && stream->video_preview.load(thumb_path)) {
@@ -291,7 +291,8 @@ void PreviewGenerator::generate_waveform()
     AVFrame* temp_frame = av_frame_alloc();
     gsl::span<int64_t> media_lengths(new int64_t[fmt_ctx->nb_streams], fmt_ctx->nb_streams);
     while (!end_of_file) {
-      while (codec_ctx[packet->stream_index] == nullptr || avcodec_receive_frame(codec_ctx[packet->stream_index], temp_frame) == AVERROR(EAGAIN)) {
+      while ( (codec_ctx[packet->stream_index] == nullptr)
+              || (avcodec_receive_frame(codec_ctx[packet->stream_index], temp_frame) == AVERROR(EAGAIN)) ) {
         av_packet_unref(packet);
         const auto read_ret = av_read_frame(fmt_ctx, packet);
         if (read_ret < 0) {
@@ -319,104 +320,103 @@ void PreviewGenerator::generate_waveform()
           ms = ftg->audio_stream_from_file_index(packet->stream_index);
         }
 
-        if (ms != nullptr && isVideo) {
-          if (!ms->preview_done) {
-            const int dstW = lround(PREVIEW_HEIGHT * (static_cast<double>(temp_frame->width)/static_cast<double>(temp_frame->height)));
-            auto const imgData = new uint8_t[dstW * PREVIEW_HEIGHT * PREVIEW_CHANNELS]; //FIXME: still showing up as a memory leak
+        if (ms != nullptr) {
+          if (isVideo) {
+            if (!ms->preview_done) {
+              const int dstW = lround(PREVIEW_HEIGHT * (static_cast<double>(temp_frame->width)/static_cast<double>(temp_frame->height)));
+              auto const imgData = new uint8_t[dstW * PREVIEW_HEIGHT * PREVIEW_CHANNELS]; //FIXME: still showing up as a memory leak
 
-            sws_ctx = sws_getContext(
-                        temp_frame->width,
-                        temp_frame->height,
-                        static_cast<AVPixelFormat>(temp_frame->format),
-                        dstW,
-                        PREVIEW_HEIGHT,
-                        static_cast<AVPixelFormat>(AV_PIX_FMT_RGBA),
-                        SWS_FAST_BILINEAR,
+              sws_ctx = sws_getContext(
+                          temp_frame->width,
+                          temp_frame->height,
+                          static_cast<AVPixelFormat>(temp_frame->format),
+                          dstW,
+                          PREVIEW_HEIGHT,
+                          static_cast<AVPixelFormat>(AV_PIX_FMT_RGBA),
+                          SWS_FAST_BILINEAR,
+                          nullptr,
+                          nullptr,
+                          nullptr
+                          );
+
+              int linesize[AV_NUM_DATA_POINTERS];
+              linesize[0] = dstW*4;
+              sws_scale(sws_ctx, temp_frame->data, temp_frame->linesize, 0, temp_frame->height, &imgData, linesize);
+
+              ms->video_preview = QImage(imgData, dstW, PREVIEW_HEIGHT, linesize[0], QImage::Format_RGBA8888, thumb_data_cleanup);
+              ms->make_square_thumb();
+              ms->preview_done = true;
+
+              sws_freeContext(sws_ctx);
+
+              if (!retrieve_duration) {
+                avcodec_close(codec_ctx[packet->stream_index]);
+                codec_ctx[packet->stream_index] = nullptr;
+              }
+            }
+            media_lengths.at(packet->stream_index)++;
+          } else if (streams[packet->stream_index]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            const auto interval = qFloor((temp_frame->sample_rate/WAVEFORM_RESOLUTION)/4)*4;
+            AVFrame* swr_frame = av_frame_alloc();
+            swr_frame->channel_layout   = temp_frame->channel_layout;
+            swr_frame->sample_rate      = temp_frame->sample_rate;
+            swr_frame->format           = AV_SAMPLE_FMT_S16P;
+
+            swr_ctx = swr_alloc_set_opts(
                         nullptr,
-                        nullptr,
+                        temp_frame->channel_layout,
+                        static_cast<AVSampleFormat>(swr_frame->format),
+                        temp_frame->sample_rate,
+                        temp_frame->channel_layout,
+                        static_cast<AVSampleFormat>(temp_frame->format),
+                        temp_frame->sample_rate,
+                        0,
                         nullptr
                         );
 
-            int linesize[AV_NUM_DATA_POINTERS];
-            linesize[0] = dstW*4;
-            sws_scale(sws_ctx, temp_frame->data, temp_frame->linesize, 0, temp_frame->height, &imgData, linesize);
+            swr_init(swr_ctx);
 
-            ms->video_preview = QImage(imgData, dstW, PREVIEW_HEIGHT, linesize[0], QImage::Format_RGBA8888, thumb_data_cleanup);
-            ms->make_square_thumb();
+            swr_convert_frame(swr_ctx, swr_frame, temp_frame);
 
-            // is video interlaced?
-            ms->video_auto_interlacing = (temp_frame->interlaced_frame)
-                                         ? ((temp_frame->top_field_first) ? ScanMethod::TOP_FIRST : ScanMethod::BOTTOM_FIRST)
-                                         : ScanMethod::PROGRESSIVE;
-            ms->video_interlacing = ms->video_auto_interlacing;
-
-            ms->preview_done = true;
-
-            sws_freeContext(sws_ctx);
-
-            if (!retrieve_duration) {
-              avcodec_close(codec_ctx[packet->stream_index]);
-              codec_ctx[packet->stream_index] = nullptr;
-            }
-          }
-          media_lengths.at(packet->stream_index)++;
-        } else if (streams[packet->stream_index]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-          const auto interval = qFloor((temp_frame->sample_rate/WAVEFORM_RESOLUTION)/4)*4;
-          AVFrame* swr_frame = av_frame_alloc();
-          swr_frame->channel_layout   = temp_frame->channel_layout;
-          swr_frame->sample_rate      = temp_frame->sample_rate;
-          swr_frame->format           = AV_SAMPLE_FMT_S16P;
-
-          swr_ctx = swr_alloc_set_opts(
-                      nullptr,
-                      temp_frame->channel_layout,
-                      static_cast<AVSampleFormat>(swr_frame->format),
-                      temp_frame->sample_rate,
-                      temp_frame->channel_layout,
-                      static_cast<AVSampleFormat>(temp_frame->format),
-                      temp_frame->sample_rate,
-                      0,
-                      nullptr
-                      );
-
-          swr_init(swr_ctx);
-
-          swr_convert_frame(swr_ctx, swr_frame, temp_frame);
-
-          // TODO implement a way to terminate this if the user suddenly closes the project while the waveform is being generated
-          const auto sample_size = av_get_bytes_per_sample(static_cast<AVSampleFormat>(swr_frame->format));
-          const auto nb_bytes = swr_frame->nb_samples * sample_size;
-          const auto byte_interval = interval * sample_size;
-          for (int i=0;i<nb_bytes;i+=byte_interval) {
-            for (int j=0; j<swr_frame->channels; ++j) {
-              qint16 min = 0;
-              qint16 max = 0;
-              for (int k=0; k<byte_interval; k+=sample_size) {
-                if ( (i+k) < nb_bytes) {
-                  qint16 sample = ((gsl::at(swr_frame->data, j)[i+k+1] << 8) | gsl::at(swr_frame->data, j)[i+k]);
-                  if (sample > max) {
-                    max = sample;
-                  } else if (sample < min) {
-                    min = sample;
+            // TODO implement a way to terminate this if the user suddenly closes the project while the waveform is being generated
+            const auto sample_size = av_get_bytes_per_sample(static_cast<AVSampleFormat>(swr_frame->format));
+            const auto nb_bytes = swr_frame->nb_samples * sample_size;
+            const auto byte_interval = interval * sample_size;
+            for (int i=0;i<nb_bytes;i+=byte_interval) {
+              for (int j=0; j<swr_frame->channels; ++j) {
+                qint16 min = 0;
+                qint16 max = 0;
+                for (int k=0; k<byte_interval; k+=sample_size) {
+                  if ( (i+k) < nb_bytes) {
+                    qint16 sample = ((gsl::at(swr_frame->data, j)[i+k+1] << 8) | gsl::at(swr_frame->data, j)[i+k]);
+                    if (sample > max) {
+                      max = sample;
+                    } else if (sample < min) {
+                      min = sample;
+                    }
+                  } else {
+                    break;
                   }
-                } else {
+                }
+                ms->audio_preview.append(min >> 8);
+                ms->audio_preview.append(max >> 8);
+                if (cancelled) {
                   break;
                 }
               }
-              ms->audio_preview.append(min >> 8);
-              ms->audio_preview.append(max >> 8);
-              if (cancelled) break;
+            }
+
+            swr_free(&swr_ctx);
+            av_frame_unref(swr_frame);
+            av_frame_free(&swr_frame);
+
+            if (cancelled) {
+              end_of_file = true; //FIXME: never used
+              break;
             }
           }
-
-          swr_free(&swr_ctx);
-          av_frame_unref(swr_frame);
-          av_frame_free(&swr_frame);
-
-          if (cancelled) {
-            end_of_file = true; //FIXME: never used
-            break;
-          }
+        } else {
+          qCritical() << "FootageStream is null";
         }
 
         // check if we've got all our previews
@@ -494,14 +494,14 @@ void PreviewGenerator::generateImagePreview(FootagePtr ftg)
 {
   sem.acquire();
   if (generate_image_thumbnail(ftg)) {
-    qDebug() << "Preview generated, fileName =" << ftg->url;
+    qDebug() << "Preview generated, fileName =" << ftg->location();
     ftg->ready_ = true;
     ftg->has_preview_ = true;
     emit set_icon(ICON_TYPE_IMAGE, replace);
     return;
   }
 
-  qWarning() << "Failed to generate thumbnail for image. path=" << ftg->url;
+  qWarning() << "Failed to generate thumbnail for image. path=" << ftg->location();
   sem.release();
 }
 
@@ -510,7 +510,7 @@ void PreviewGenerator::run()
   Q_ASSERT(media != nullptr);
 
   if (auto ftg = footage.lock()) {
-    QFileInfo fNow(ftg->url);
+    QFileInfo fNow(ftg->location());
     if (fNow.isFile() && fNow.isReadable()) {
       QMimeType mimeType = QMimeDatabase().mimeTypeForFile(fNow, QMimeDatabase::MatchContent);
       if (mimeType.isValid()) {
@@ -527,7 +527,7 @@ void PreviewGenerator::run()
     }
 
     // video/audio waveform generation
-    const char* const filename = ftg->url.toUtf8().data();
+    const char* const filename = ftg->location().toUtf8().data();
 
     QString errorStr;
     bool error = false;
@@ -549,8 +549,8 @@ void PreviewGenerator::run()
         parse_media();
 
         // see if we already have data for this
-        const QFileInfo file_info(ftg->url);
-        const QString cache_file(ftg->url.mid(ftg->url.lastIndexOf('/')+1)
+        const QFileInfo file_info(ftg->location());
+        const QString cache_file(ftg->location().mid(ftg->location().lastIndexOf('/')+1)
                                  + QString::number(file_info.size())
                                  + QString::number(file_info.lastModified().toMSecsSinceEpoch()));
         const QString hash(QCryptographicHash::hash(cache_file.toUtf8(), QCryptographicHash::Md5).toHex());
@@ -588,9 +588,9 @@ void PreviewGenerator::run()
     if (error) {
       media->updateTooltip(errorStr);
       emit set_icon(ICON_TYPE_ERROR, replace);
-      qCritical() << "Failed to generate preview, msg =" << errorStr << ", fileName =" << ftg->url;
+      qCritical() << "Failed to generate preview, msg =" << errorStr << ", fileName =" << ftg->location();
     } else {
-      qDebug() << "Preview generated, fileName =" << ftg->url;
+      qDebug() << "Preview generated, fileName =" << ftg->location();
       ftg->has_preview_ = true;
       media->updateTooltip();
     }
@@ -602,7 +602,7 @@ bool PreviewGenerator::generate_image_thumbnail(const FootagePtr& ftg) const
   bool success = true;
 
   // TODO: address image sequences. current implementation has false positives
-  const QImage img(ftg->url);
+  const QImage img(ftg->location());
   FootageStreamPtr ms = std::make_shared<FootageStream>();
   ms->enabled           = true;
   ms->file_index        = 0;
@@ -613,8 +613,6 @@ bool PreviewGenerator::generate_image_thumbnail(const FootagePtr& ftg) const
   ms->video_width       = img.width();
   ms->infinite_length   = true;
   ms->video_frame_rate  = IMAGE_FRAMERATE;
-  ms->video_auto_interlacing  = ScanMethod::PROGRESSIVE; // TODO: is this needed
-  ms->video_interlacing       = ScanMethod::PROGRESSIVE; // TODO: is this needed
   ms->type_ = StreamType::VIDEO;
   ftg->video_tracks.append(ms);
   return success;

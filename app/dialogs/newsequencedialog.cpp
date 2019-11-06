@@ -90,7 +90,7 @@ void NewSequenceDialog::create() {
     s->setAudioLayout(AV_CH_LAYOUT_STEREO);
 
     ComboAction* ca = new ComboAction();
-    panels::PanelManager::projectViewer().new_sequence(ca, s, true, nullptr);
+    panels::PanelManager::projectViewer().newSequence(ca, s, true, nullptr);
     e_undo_stack.push(ca);
   } else {
     ComboAction* ca = new ComboAction();

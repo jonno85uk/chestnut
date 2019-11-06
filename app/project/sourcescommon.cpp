@@ -61,7 +61,7 @@ void SourcesCommon::create_seq_from_selected()
     panels::PanelManager::timeLine().createGhostsFromMedia(seq, 0, media_list);
     panels::PanelManager::timeLine().addClipsFromGhosts(ca, seq);
 
-    project_parent->new_sequence(ca, seq, true, nullptr);
+    project_parent->newSequence(ca, seq, true, nullptr);
     e_undo_stack.push(ca);
   }
 }
@@ -319,7 +319,7 @@ void SourcesCommon::reveal_in_browser()
     return;
   }
 
-  auto dir = QFileInfo(ftg->url).absoluteDir().path();
+  auto dir = QFileInfo(ftg->location()).absoluteDir().path();
   QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
 }
 

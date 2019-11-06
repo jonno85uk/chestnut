@@ -52,7 +52,7 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
   row++;
 
   track_list = new QListWidget();
-  for (const auto stream : ftg->video_tracks) {
+  for (const auto& stream : ftg->video_tracks) {
     if (!stream) continue;
     auto trackItem = new QListWidgetItem(
           tr("Video %1: %2x%3 %4FPS").arg(
@@ -68,7 +68,7 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
     track_list->addItem(trackItem);
   }
 
-  for (const auto stream : ftg->audio_tracks) {
+  for (const auto& stream : ftg->audio_tracks) {
     if (!stream) continue;
     auto trackItem = new QListWidgetItem(
           tr("Audio %1: %2Hz %3 channels").arg(
@@ -99,19 +99,12 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
 
     // deinterlacing mode
     interlacing_box = new QComboBox();
-    interlacing_box->addItem(
-          tr("Auto (%1)").arg(
-            get_interlacing_name(ftg->video_tracks.front()->video_auto_interlacing)
-            )
-          );
+    interlacing_box->addItem(tr("Auto (%1)").arg(get_interlacing_name(ftg->video_tracks.front()->fieldOrder())));
     interlacing_box->addItem(get_interlacing_name(ScanMethod::PROGRESSIVE));
     interlacing_box->addItem(get_interlacing_name(ScanMethod::TOP_FIRST));
     interlacing_box->addItem(get_interlacing_name(ScanMethod::BOTTOM_FIRST));
 
-    interlacing_box->setCurrentIndex(
-          (ftg->video_tracks.front()->video_auto_interlacing == ftg->video_tracks.front()->video_interlacing)
-          ? 0
-          : static_cast<int>(ftg->video_tracks.front()->video_interlacing) + 1);
+    interlacing_box->setCurrentIndex(0);
 
     grid->addWidget(new QLabel(tr("Interlacing:")), row, 0);
     grid->addWidget(interlacing_box, row, 1);
@@ -171,13 +164,13 @@ void MediaPropertiesDialog::accept()
 
   // set interlacing
   if ( (!ftg->video_tracks.empty()) && (ftg->video_tracks.front() != nullptr) ) {
-    if (interlacing_box->currentIndex() > 0) {
-      ca->append(new SetValCommand<ScanMethod>(ftg->video_tracks.front()->video_interlacing,
-                                               static_cast<ScanMethod>(interlacing_box->currentIndex() - 1)));
-    } else {
-      ca->append(new SetValCommand<ScanMethod>(ftg->video_tracks.front()->video_interlacing,
-                                               ftg->video_tracks.front()->video_auto_interlacing));
-    }
+//    if (interlacing_box->currentIndex() > 0) {
+//      ca->append(new SetValCommand<ScanMethod>(ftg->video_tracks.front()->fieldOrder(),
+//                                               static_cast<ScanMethod>(interlacing_box->currentIndex() - 1)));
+//    } else {
+//      ca->append(new SetValCommand<ScanMethod>(ftg->video_tracks.front()->fieldOrder(),
+//                                               ftg->video_tracks.front()->fieldOrder()));
+//    }
 
     // set frame rate conform
     if (!ftg->video_tracks.front()->infinite_length && !qFuzzyCompare(conform_fr->value(),

@@ -262,7 +262,7 @@ void Project::duplicate_selected() {
   for (int j=0; j<items.size(); ++j) {
     MediaPtr i = item_to_media(items.at(j));
     if (i->type() == MediaType::SEQUENCE) {
-      new_sequence(ca, SequencePtr(i->object<Sequence>()->copy()), false, item_to_media(items.at(j).parent()));
+      newSequence(ca, SequencePtr(i->object<Sequence>()->copy()), false, item_to_media(items.at(j).parent()));
       duped = true;
     }
   }
@@ -357,18 +357,20 @@ void Project::open_properties() {
   }
 }
 
-MediaPtr Project::new_sequence(ComboAction *ca, SequencePtr s, bool open, MediaPtr parentItem) {
+
+MediaPtr Project::newSequence(ComboAction *ca, SequencePtr seq, const bool open, MediaPtr parentItem) const
+{
   if (parentItem == nullptr) {
     parentItem = Project::model().root();
   }
   auto item = std::make_shared<Media>(parentItem);
-  item->setSequence(s);
+  item->setSequence(seq);
 
   if (ca != nullptr) {
     auto cmd = new NewSequenceCommand(item, parentItem, MainWindow::instance().isWindowModified());
     ca->append(cmd);
     if (open) {
-      ca->append(new ChangeSequenceAction(s));
+      ca->append(new ChangeSequenceAction(seq));
     }
   } else {
     if (parentItem == Project::model().root()) {
@@ -377,7 +379,7 @@ MediaPtr Project::new_sequence(ComboAction *ca, SequencePtr s, bool open, MediaP
       parentItem->appendChild(item);
     }
     if (open) {
-      set_sequence(s);
+      set_sequence(seq);
     }
   }
   return item;
@@ -765,11 +767,10 @@ void Project::process_file_list(QStringList& files, bool recursive, MediaPtr rep
           ftg->reset();
         } else {
           item = std::make_shared<Media>(parent);
-          ftg = std::make_shared<Footage>(item);
+          ftg = std::make_shared<Footage>(fileName, item);
         }
 
         ftg->using_inout = false;
-        ftg->url = fileName;
         ftg->setName(get_file_name_from_path(fileName));
 
         item->setFootage(ftg);

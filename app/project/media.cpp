@@ -190,7 +190,7 @@ void Media::updateTooltip(const QString& error)
     {
       auto ftg = object<Footage>();
       tool_tip_ = QCoreApplication::translate("Media", "Name:") + " " + ftg->name() + "\n"
-                  + QCoreApplication::translate("Media", "Filename:") + " " + ftg->url + "\n";
+                 + QCoreApplication::translate("Media", "Filename:") + " " + ftg->location() + "\n";
 
       if (error.isEmpty()) {
         if (!ftg->video_tracks.empty()) {
@@ -210,9 +210,10 @@ void Media::updateTooltip(const QString& error)
               if (i > 0) {
                 tool_tip_ += ", ";
               }
-              if (ftg->video_tracks.at(i)->video_interlacing == ScanMethod::PROGRESSIVE) {
+              if (ftg->video_tracks.at(i)->fieldOrder() == ScanMethod::PROGRESSIVE) {
                 tool_tip_ += QString::number(ftg->video_tracks.at(i)->video_frame_rate * ftg->speed_);
               } else {
+                qDebug() << "Interlaced footage";
                 tool_tip_ += QCoreApplication::translate("Media", "%1 fields (%2 frames)").arg(
                               QString::number(ftg->video_tracks.at(i)->video_frame_rate * ftg->speed_ * 2),
                               QString::number(ftg->video_tracks.at(i)->video_frame_rate * ftg->speed_)
@@ -227,7 +228,7 @@ void Media::updateTooltip(const QString& error)
             if (i > 0) {
               tool_tip_ += ", ";
             }
-            tool_tip_ += get_interlacing_name(ftg->video_tracks.at(i)->video_interlacing);
+            tool_tip_ += get_interlacing_name(ftg->video_tracks.at(i)->fieldOrder());
           }
         }
 

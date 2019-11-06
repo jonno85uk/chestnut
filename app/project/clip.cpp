@@ -174,7 +174,7 @@ bool Clip::openWorker() {
   } else if (timeline_info.media->type() == MediaType::FOOTAGE) {
     // opens file resource for FFmpeg and prepares Clip struct for playback
     auto ftg = timeline_info.media->object<Footage>();
-    const char* const filename = ftg->url.toUtf8().data();
+    auto filename = ftg->location().toUtf8().data();
 
     FootageStreamPtr ms;
     if (mediaType() == ClipType::VISUAL) {
@@ -235,7 +235,7 @@ bool Clip::openWorker() {
       }
     }
 
-    if (ms->video_interlacing != ScanMethod::PROGRESSIVE) {
+    if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
       max_queue_size *= 2;
     }
 
@@ -286,10 +286,10 @@ bool Clip::openWorker() {
 
       AVFilterContext* last_filter = buffersrc_ctx;
 
-      if (ms->video_interlacing != ScanMethod::PROGRESSIVE) {
+      if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
         AVFilterContext* yadif_filter;
         char yadif_args[100];
-        snprintf(yadif_args, sizeof(yadif_args), "mode=3:parity=%d", ((ms->video_interlacing == ScanMethod::TOP_FIRST) ? 0 : 1));
+        snprintf(yadif_args, sizeof(yadif_args), "mode=3:parity=%d", ((ms->fieldOrder() == ScanMethod::TOP_FIRST) ? 0 : 1));
         avfilter_graph_create_filter(&yadif_filter, avfilter_get_by_name("yadif"), "yadif", yadif_args, nullptr, filter_graph);
 
         avfilter_link(last_filter, 0, yadif_filter, 0);
@@ -883,11 +883,13 @@ void Clip::frame(const long playhead, bool& texture_failed)
     } else {
       ms = ftg->audio_stream_from_file_index(timeline_info.media_stream);
     }
-    if (ms == nullptr) return;
+    if (ms == nullptr) {
+      return;
+    }
 
     int64_t target_pts = qMax(static_cast<int64_t>(0), playhead_to_timestamp(playhead));
     int64_t second_pts = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
-    if (ms->video_interlacing != ScanMethod::PROGRESSIVE) {
+    if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
       target_pts *= 2;
       second_pts *= 2;
     }

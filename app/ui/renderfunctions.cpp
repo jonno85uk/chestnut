@@ -173,7 +173,7 @@ GLuint compose_sequence(Viewer* viewer,
       auto ftg = clp->timeline_info.media->object<Footage>();
       if (!ftg->has_preview_) {
         // TODO: should the render really be prevented just because the audio waveform preview hasn't been generated?
-        qInfo() << "Waiting on preview (audio/video) to be generated for Footage, fileName =" << ftg->url;
+        qDebug() << "Waiting on preview (audio/video) to be generated for Footage, fileName =" << ftg->location();
         continue;
       }
 

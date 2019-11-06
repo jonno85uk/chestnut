@@ -24,7 +24,7 @@ SOURCES += main.cpp
 
 FORMS +=
 
-LIBS += -L../$${DESTDIR}/ -lchestnut -lgomp
+LIBS += -L../$${DESTDIR}/ -lchestnut -lgomp -lmediaHandling
 CONFIG(coverage) {
     LIBS += -lgcov
 }
