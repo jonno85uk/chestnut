@@ -170,8 +170,9 @@ void FootageStream::initialise(const media_handling::IMediaStream& stream)
         return StreamType::AUDIO;
       case media_handling::StreamType::VISUAL:
         return StreamType::VIDEO;
+      default:
+        return StreamType::UNKNOWN;
     }
-    return StreamType::UNKNOWN;
   });
 
   // TODO: determine is a still image
@@ -183,7 +184,15 @@ void FootageStream::initialise(const media_handling::IMediaStream& stream)
       qWarning() << msg;
       throw std::runtime_error(msg);
     }
-    video_frame_rate = boost::rational_cast<double>(frate);
+
+    if (frate.denominator() == 0) {
+      // An image?
+      // TODO: test this
+      infinite_length = true;
+      video_frame_rate = 0.0;
+    } else {
+      video_frame_rate = boost::rational_cast<double>(frate);
+    }
     const auto dimensions = stream.property<media_handling::Dimensions>(MediaProperty::DIMENSIONS, is_okay);
     if (!is_okay) {
       constexpr auto msg = "Unable to identify video dimension";

@@ -34,9 +34,9 @@ class PreviewGenerator;
 class MediaThrobber;
 class Media;
 
+
 using FootagePtr = std::shared_ptr<Footage>;
 using FootageWPtr = std::weak_ptr<Footage>;
-
 
 
 class Footage : public project::ProjectItem {

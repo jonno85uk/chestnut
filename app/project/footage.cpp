@@ -126,79 +126,10 @@ void Footage::parseStreams()
   bool is_okay = false;
   length_ = media_source_->property<int64_t>(MediaProperty::DURATION, is_okay);
   if (!is_okay) {
-    qWarning() << "Failed to retrieve footage duration";
+    constexpr auto msg = "Failed to retrieve footage duration";
+    qCritical() << msg;
+    throw std::runtime_error(msg);
   }
-
-
-  //    gsl::span<AVStream*> streams(fmt_ctx->streams, fmt_ctx->nb_streams);
-  //    for (int i=0; i < streams.size(); ++i) {
-  //      AVStream* const stream = streams.at(i);
-  //      if ( (stream == nullptr) || (stream->codecpar == nullptr) ) {
-  //        qCritical() << "AV Stream instance(s) are null";
-  //        continue;
-  //      }
-  //      // Find the decoder for the video stream
-  //      if (avcodec_find_decoder(stream->codecpar->codec_id) == nullptr) {
-  //        qCritical() << "Unsupported codec in stream" << i << "of file" << ftg->name();
-  //      } else {
-  //        // TODO: use mediastream
-  //        auto ms = std::make_shared<FootageStream>();
-  //        ms->preview_done = false;
-  //        ms->file_index = i;
-  //        ms->enabled = true;
-
-  //        bool append = false;
-
-  //        if ( (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
-  //            && (stream->codecpar->width > 0)
-  //            && (stream->codecpar->height > 0) ) {
-  //          ms->type_ = StreamType::VIDEO;
-  //          // heuristic to determine if video is a still image
-  //          if ( (stream->avg_frame_rate.den == 0)
-  //              && (stream->codecpar->codec_id != AV_CODEC_ID_DNXHD) ) { // silly hack but this is the only scenario i've seen this
-  //            if (ftg->location().contains('%')) {
-  //              // must be an image sequence
-  //              ms->infinite_length = false;
-  //              ms->video_frame_rate = 25;
-  //            } else {
-  //              ms->infinite_length = true;
-  //              contains_still_image = true;
-  //              ms->video_frame_rate = 0;
-  //            }
-  //          } else {
-  //            ms->infinite_length = false;
-  //            // using ffmpeg's built-in heuristic
-  //            ms->video_frame_rate = av_q2d(av_guess_frame_rate(fmt_ctx, stream, nullptr));
-  //          }
-
-  //          ms->video_width = stream->codecpar->width;
-  //          ms->video_height = stream->codecpar->height;
-  //          append = true;
-  //        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-  //          ms->type_ = StreamType::AUDIO;
-  //          ms->audio_channels = stream->codecpar->channels;
-  //          ms->audio_layout = stream->codecpar->channel_layout;
-  //          ms->audio_frequency = stream->codecpar->sample_rate;
-
-  //          append = true;
-  //        }
-
-  //        if (append) {
-  //          QVector<FootageStreamPtr>& stream_list = (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-  //                                                   ? ftg->audio_tracks : ftg->video_tracks;
-  //          for (int j=0;j<stream_list.size();j++) {
-  //            if (stream_list.at(j)->file_index == i) {
-  //              stream_list[j] = ms;
-  //              append = false;
-  //            }
-  //          }
-  //          if (append) {
-  //            stream_list.append(ms);
-  //          }
-  //        }
-  //      }
-  //    }
-  //    ftg->length_ = fmt_ctx->duration;
 }
 
 bool Footage::load(QXmlStreamReader& stream)
