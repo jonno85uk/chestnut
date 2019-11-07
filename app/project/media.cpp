@@ -406,17 +406,15 @@ QVariant Media::data(const int32_t column, const int32_t role)
 {
   switch (role) {
     case Qt::DecorationRole:
-      if (column == 0) {
-        if (type() == MediaType::FOOTAGE) {
-          FootagePtr f = object<Footage>();
-          if ( (!f->video_tracks.empty())
-               && f->video_tracks.front()->preview_done) {
-            return f->video_tracks.front()->video_preview_square;
-          }
-        }
-
-        return icon_;
+      if (column != 0) {
+        return {};
       }
+      if (type() == MediaType::FOOTAGE) {
+        if (auto ftg = object<Footage>(); (!ftg->video_tracks.empty()) && ftg->video_tracks.front()->preview_done) {
+          return ftg->video_tracks.front()->video_preview_square;
+        }
+      }
+      return icon_;
       break;
     case Qt::DisplayRole:
       switch (column) {
@@ -429,12 +427,13 @@ QVariant Media::data(const int32_t column, const int32_t role)
           }
           if (type() == MediaType::SEQUENCE) {
             auto seq = object<Sequence>();
+            Q_ASSERT(seq);
             return frame_to_timecode(seq->endFrame(), e_config.timecode_view, seq->frameRate());
           }
           if (type() == MediaType::FOOTAGE) {
             auto ftg = object<Footage>();
+            Q_ASSERT(ftg);
             double rate = 30;
-
             if ( (!ftg->video_tracks.empty()) && !qIsNull(ftg->video_tracks.front()->video_frame_rate)) {
               rate = ftg->video_tracks.front()->video_frame_rate * ftg->speed_;
             }
@@ -451,12 +450,11 @@ QVariant Media::data(const int32_t column, const int32_t role)
             return QCoreApplication::translate("Media", "Rate");
           }
           if (type() == MediaType::SEQUENCE) {
-            return QString::number(frameRate(),
-                                   FRAME_RATE_ARG_FORMAT,
-                                   FRAME_RATE_DECIMAL_POINTS) + " FPS";
+            return QString::number(frameRate(), FRAME_RATE_ARG_FORMAT, FRAME_RATE_DECIMAL_POINTS) + " FPS";
           }
           if (type() == MediaType::FOOTAGE) {
             auto ftg = object<Footage>();
+            Q_ASSERT(ftg);
             const double rate = frameRate();
             QString ret_str;
             if ( (!ftg->video_tracks.empty()) && !qIsNull(rate)) {

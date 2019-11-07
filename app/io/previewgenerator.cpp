@@ -48,17 +48,16 @@ extern "C" {
 
 using project::FootageStreamPtr;
 using project::FootageStream;
-using project::StreamType;
 using project::ScanMethod;
 
 constexpr auto IMAGE_FRAMERATE = 0;
-constexpr auto PREVIEW_HEIGHT = 120;
+constexpr auto PREVIEW_HEIGHT = 480;
 constexpr auto PREVIEW_CHANNELS = 4;
 constexpr auto WAVEFORM_RESOLUTION = 64.0;
 constexpr auto MIME_VIDEO_PREFIX = "video";
 constexpr auto MIME_AUDIO_PREFIX = "audio";
 constexpr auto MIME_IMAGE_PREFIX = "image";
-constexpr const char* const PREVIEW_DIR = "/previews";
+constexpr auto PREVIEW_DIR = "/previews";
 constexpr auto THUMB_PREVIEW_FORMAT = "png";
 
 namespace {
@@ -542,14 +541,14 @@ bool PreviewGenerator::generate_image_thumbnail(const FootagePtr& ftg) const
   FootageStreamPtr ms = std::make_shared<FootageStream>();
   ms->enabled           = true;
   ms->file_index        = 0;
-  ms->video_preview     = img.scaledToHeight(PREVIEW_HEIGHT);
+  ms->video_preview     = img.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
   ms->make_square_thumb();
   ms->preview_done      = true;
   ms->video_height      = img.height();
   ms->video_width       = img.width();
   ms->infinite_length   = true;
   ms->video_frame_rate  = IMAGE_FRAMERATE;
-  ms->type_ = StreamType::VIDEO;
+  ms->type_ = media_handling::StreamType::VIDEO;
   ftg->video_tracks.append(ms);
   return success;
 }

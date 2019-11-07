@@ -35,12 +35,6 @@ namespace project {
     UNKNOWN
   };
 
-  enum class StreamType{
-    AUDIO,
-    VIDEO,
-    UNKNOWN
-  };
-
   class FootageStream : public project::IXMLStreamer {
     public:
       FootageStream();
@@ -73,7 +67,7 @@ namespace project {
       QImage video_preview;
       QIcon video_preview_square;
       QVector<char> audio_preview;
-      StreamType type_{StreamType::UNKNOWN};
+      media_handling::StreamType type_ {media_handling::StreamType::UNKNOWN};
     private:
       media_handling::MediaStreamPtr stream_info_{nullptr};
 
