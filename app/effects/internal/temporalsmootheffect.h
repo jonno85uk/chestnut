@@ -38,8 +38,8 @@ class TemporalSmoothEffect : public Effect
     virtual void process_image(double timecode, gsl::span<uint8_t>& data) override;
     virtual void setupUi() override;
   private:
-    EffectField* frame_length_;
-    EffectField* blend_mode_;
+    EffectField* frame_length_ {nullptr};
+    EffectField* blend_mode_ {nullptr};
     VectorSpanBytes frames_;
     int thread_count_{1};
 };

@@ -47,7 +47,6 @@
 #include "ui/viewerwidget.h"
 #include "ui/sourceiconview.h"
 #include "ui/timelineheader.h"
-#include "ui/defaultshortcut.h"
 
 #include "panels/panelmanager.h"
 
@@ -68,7 +67,6 @@
 
 using panels::PanelManager;
 
-MainWindow* MainWindow::instance_ = nullptr;
 
 constexpr auto DEFAULT_CSS = "QPushButton::checked { background: rgb(25, 25, 25); }";
 constexpr double FULLSCREEN_RATIO = 4.0/3.0;

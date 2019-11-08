@@ -130,7 +130,7 @@ class ExportThread : public QThread {
     AVPacket audio_pkt;
     SwrContext* swr_ctx = nullptr;
 
-    int aframe_bytes;
+    int aframe_bytes {0};
 
     QMutex mutex;
     QWaitCondition waitCond;

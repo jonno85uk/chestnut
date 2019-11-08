@@ -71,7 +71,7 @@ class EffectMeta { //TODO: address types
     int id;
 
   private:
-    static int nextId;
+    inline static int nextId {0};
 };
 
 extern bool shaders_are_enabled;
@@ -257,13 +257,13 @@ class Effect : public QObject,  public std::enable_shared_from_this<Effect>, pub
 
     QVector<EffectRowPtr> rows;
     QVector<EffectGizmoPtr> gizmos;
-    QGridLayout* ui_layout;
-    QWidget* ui;
+    QGridLayout* ui_layout {nullptr};
+    QWidget* ui {nullptr};
     QVector<QVariant> cachedValues;
     std::set<Capability> capabilities_;
     bool is_open_{false};
     bool bound_{false};
-    static QMap<QString, EffectMeta> registered;
+    inline static QMap<QString, EffectMeta> registered {};
 
     bool valueHasChanged(const double timecode);
     int get_index_in_clip();

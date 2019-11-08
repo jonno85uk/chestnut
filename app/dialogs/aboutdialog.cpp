@@ -33,7 +33,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
   layout->setSpacing(20);
   setLayout(layout);
 
-  const QString fmt(strlen(chestnut::version::PREREL) > 0 ? "%1.%2.%3-%4" : "%1.%2.%3");
+  const QString fmt(QString(chestnut::version::PREREL).size() > 0 ? "%1.%2.%3-%4" : "%1.%2.%3");
 
   const QString version(fmt.arg(chestnut::version::MAJOR)
                         .arg(chestnut::version::MINOR)

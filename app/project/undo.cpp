@@ -142,7 +142,9 @@ void MoveClipAction::redo()
 }
 
 
-DeleteClipAction::DeleteClipAction(ClipPtr del_clip) : clip_(std::move(del_clip))
+DeleteClipAction::DeleteClipAction(ClipPtr del_clip)
+  : clip_(std::move(del_clip)),
+    old_project_changed(MainWindow::instance().isWindowModified())
 {
 
 }
@@ -1110,7 +1112,8 @@ void RenameClipCommand::redo() {
 
 SplitClipCommand::SplitClipCommand(ClipPtr clp, const long position)
   : pre_clip_(std::move(clp)),
-    position_(position)
+    position_(position),
+    old_project_changed(MainWindow::instance().isWindowModified())
 {
 
 }
@@ -1123,23 +1126,23 @@ void SplitClipCommand::undo()
     pre_clip_->sequence->deleteClip(post_clip->id());
   }
 
-  for (auto pre_l_id : mapped_posts_.keys()) {
-    if (auto pre_l = pre_clip_->sequence->clip(pre_l_id)) {
+  for (const auto& pre_l_id : mapped_posts_.keys()) {
+    if (const auto& pre_l = pre_clip_->sequence->clip(pre_l_id)) {
       if (const auto& orig_clip = mapped_posts_[pre_l_id]) {
         pre_l->merge(*orig_clip);
         // restore transition length(s)
-        if (mapped_transition_lengths_.contains(pre_l_id)) {
-          if (auto open_tran = pre_l->getTransition(ClipTransitionType::OPENING)) {
-            open_tran->setLength(mapped_transition_lengths_[pre_l_id].first);
-          }
-          if (auto close_tran = pre_l->getTransition(ClipTransitionType::CLOSING)) {
-            close_tran->setLength(mapped_transition_lengths_[pre_l_id].second);
-          }
+        if (!mapped_transition_lengths_.contains(pre_l_id)) {
+          continue;
+        }
+        if (auto open_tran = pre_l->getTransition(ClipTransitionType::OPENING)) {
+          open_tran->setLength(mapped_transition_lengths_[pre_l_id].first);
+        }
+        if (auto close_tran = pre_l->getTransition(ClipTransitionType::CLOSING)) {
+          close_tran->setLength(mapped_transition_lengths_[pre_l_id].second);
         }
       }
     }
-  }
-
+  }//for
 }
 
 void SplitClipCommand::redo()

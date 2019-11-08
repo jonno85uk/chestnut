@@ -30,8 +30,8 @@ class QPainterWrapper : public QObject {
     QPainterWrapper(const QPainterWrapper&) = delete;
     QPainterWrapper operator=(const QPainterWrapper&) = delete;
 
-    QImage* img;
-    QPainter* painter;
+    QImage* img {nullptr};
+    QPainter* painter {nullptr};
   public slots:
     void fill(const QString& color);
     void fillRect(int x, int y, int width, int height, const QString& brush);

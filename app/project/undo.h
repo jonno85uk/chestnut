@@ -664,27 +664,11 @@ class SplitClipCommand : public QUndoCommand {
     QVector<ClipPtr> posts_;
     QMap<int, ClipPtr> mapped_posts_;
     QMap<int, QPair<long,long>> mapped_transition_lengths_;
-    bool old_project_changed;
+    bool old_project_changed {false};
 
     void storeLengths(const int id, Clip& clp);
 };
 
-//class SetPointer : public QUndoCommand {
-//public:
-//    SetPointer(void** pointer, void* data);
-//    SetPointer(ClipPtr clp);
-
-//    SetPointer(const SetPointer& ) = delete;
-//    SetPointer& operator=(const SetPointer&) = delete;
-
-//    virtual void undo() override;
-//    virtual void redo() override;
-//private:
-//    bool old_changed;
-//    void** p;
-//    void* new_data;
-//    void* old_data;
-//};
 
 class ReloadEffectsCommand : public QUndoCommand {
 public:

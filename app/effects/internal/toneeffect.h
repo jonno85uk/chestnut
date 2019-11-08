@@ -31,10 +31,10 @@ class ToneEffect : public Effect {
 
     virtual void setupUi() override;
 
-    EffectField* type_val;
-    EffectField* freq_val;
-    EffectField* amount_val;
-    EffectField* mix_val;
+    EffectField* type_val {nullptr};
+    EffectField* freq_val {nullptr};
+    EffectField* amount_val {nullptr};
+    EffectField* mix_val {nullptr};
   private:
     int sinX;
 };

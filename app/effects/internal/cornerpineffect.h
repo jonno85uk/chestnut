@@ -33,15 +33,15 @@ class CornerPinEffect : public Effect {
     virtual void gizmo_draw(double timecode, GLTextureCoords& coords) override;
     virtual void setupUi() override;
   private:
-    EffectField* top_left_x;
-    EffectField* top_left_y;
-    EffectField* top_right_x;
-    EffectField* top_right_y;
-    EffectField* bottom_left_x;
-    EffectField* bottom_left_y;
-    EffectField* bottom_right_x;
-    EffectField* bottom_right_y;
-    EffectField* perspective;
+    EffectField* top_left_x {nullptr};
+    EffectField* top_left_y {nullptr};
+    EffectField* top_right_x {nullptr};
+    EffectField* top_right_y {nullptr};
+    EffectField* bottom_left_x {nullptr};
+    EffectField* bottom_left_y {nullptr};
+    EffectField* bottom_right_x {nullptr};
+    EffectField* bottom_right_y {nullptr};
+    EffectField* perspective {nullptr};
 
     EffectGizmoPtr top_left_gizmo;
     EffectGizmoPtr top_right_gizmo;

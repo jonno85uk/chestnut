@@ -163,6 +163,7 @@ bool ExportThread::setupVideo()
 
   // create video stream
   video_stream = avformat_new_stream(fmt_ctx, vcodec);
+  Q_ASSERT(video_stream);
   video_stream->id = 0;
   if (!video_stream) {
     qCritical() << "Could not allocate video stream";

@@ -33,9 +33,9 @@ class ShakeEffect : public Effect {
     void process_coords(double timecode, GLTextureCoords& coords, int data) override;
     virtual void setupUi() override;
 
-    EffectField* intensity_val;
-    EffectField* rotation_val;
-    EffectField* frequency_val;
+    EffectField* intensity_val {nullptr};
+    EffectField* rotation_val {nullptr};
+    EffectField* frequency_val {nullptr};
   private:
     double random_vals[RANDOM_VAL_SIZE];
 };

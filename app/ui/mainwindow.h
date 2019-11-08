@@ -238,7 +238,7 @@ class MainWindow : public QMainWindow {
     QString config_fn;
     QMenu* edit_menu_{nullptr};
 
-    static MainWindow* instance_;
+    inline static MainWindow* instance_ = nullptr;
     void setupEditMenu(QMenuBar* menuBar);
 };
 

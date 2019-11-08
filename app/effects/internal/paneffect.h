@@ -33,7 +33,7 @@ class PanEffect : public Effect {
 
     virtual void setupUi() override;
 
-    EffectField* pan_val;
+    EffectField* pan_val {nullptr};
 };
 
 #endif // PANEFFECT_H

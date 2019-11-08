@@ -14,7 +14,7 @@ public:
 
   virtual void setupUi() override;
 private:
-    EffectField* fill_type;
+    EffectField* fill_type {nullptr};
 };
 
 #endif // FILLLEFTRIGHTEFFECT_H

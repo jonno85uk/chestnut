@@ -33,23 +33,23 @@ class TextEffect : public Effect {
     TextEffect& operator=(const TextEffect&) = delete;
     virtual void setupUi() override;
 
-    EffectField* text_val;
-    EffectField* size_val;
-    EffectField* set_color_button;
-    EffectField* set_font_combobox;
-    EffectField* halign_field;
-    EffectField* valign_field;
-    EffectField* word_wrap_field;
+    EffectField* text_val {nullptr};
+    EffectField* size_val {nullptr};
+    EffectField* set_color_button {nullptr};
+    EffectField* set_font_combobox {nullptr};
+    EffectField* halign_field {nullptr};
+    EffectField* valign_field {nullptr};
+    EffectField* word_wrap_field {nullptr};
 
-    EffectField* outline_bool;
-    EffectField* outline_width;
-    EffectField* outline_color;
+    EffectField* outline_bool {nullptr};
+    EffectField* outline_width {nullptr};
+    EffectField* outline_color {nullptr};
 
-    EffectField* shadow_bool;
-    EffectField* shadow_distance;
-    EffectField* shadow_color;
-    EffectField* shadow_softness;
-    EffectField* shadow_opacity;
+    EffectField* shadow_bool {nullptr};
+    EffectField* shadow_distance {nullptr};
+    EffectField* shadow_color {nullptr};
+    EffectField* shadow_softness {nullptr};
+    EffectField* shadow_opacity {nullptr};
 
   protected:
     void redraw(double timecode) override;

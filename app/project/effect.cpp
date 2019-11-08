@@ -66,9 +66,6 @@ constexpr auto LOCAL_EFFECT_PATH = "effects";
 bool shaders_are_enabled = true;
 
 
-QMap<QString, EffectMeta> Effect::registered;
-int EffectMeta::nextId = 0;
-
 using panels::PanelManager;
 
 EffectPtr create_effect(ClipPtr c, const EffectMeta& em, const bool setup)

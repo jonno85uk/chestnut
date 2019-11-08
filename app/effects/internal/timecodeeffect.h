@@ -33,14 +33,14 @@ public:
     TimecodeEffect& operator=(const TimecodeEffect&) = delete;
     virtual void setupUi() override;
 
-    EffectField* scale_val;
-    EffectField* color_val;
-    EffectField* color_bg_val;
-    EffectField* bg_alpha;
-    EffectField* offset_x_val;
-    EffectField* offset_y_val;
-    EffectField* prepend_text;
-    EffectField* tc_select;
+    EffectField* scale_val {nullptr};
+    EffectField* color_val {nullptr};
+    EffectField* color_bg_val {nullptr};
+    EffectField* bg_alpha {nullptr};
+    EffectField* offset_x_val {nullptr};
+    EffectField* offset_y_val {nullptr};
+    EffectField* prepend_text {nullptr};
+    EffectField* tc_select {nullptr};
   protected:
     void redraw(double timecode);
 

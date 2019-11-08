@@ -33,8 +33,8 @@ public:
 
     virtual void setupUi() override;
 
-    EffectField* amount_val;
-    EffectField* mix_val;
+    EffectField* amount_val {nullptr};
+    EffectField* mix_val {nullptr};
 
 };
 

@@ -61,7 +61,6 @@ class Transition : public Effect {
   public:
     Transition(const ClipPtr& c, const ClipPtr& s, const EffectMeta& em);
 
-//    int copy(const ClipPtr& c, const ClipPtr& s);
     void setLength(const long value);
     long get_true_length() const;
     long get_length() const;
@@ -75,10 +74,10 @@ class Transition : public Effect {
   private slots:
     void set_length_from_slider();
   private:
-    long length; // used only for transitions
+    long length {0}; // used only for transitions
     EffectField* length_field{nullptr};
     ClipWPtr secondary_clip; // Presumably the clip (of the same track) which the transition is spread over
-    int secondary_load_id;
+    int secondary_load_id {0};
 
     /*
      * Ensure that the timeline is updated on transition modification
