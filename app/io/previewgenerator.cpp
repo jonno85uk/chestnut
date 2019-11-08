@@ -96,12 +96,14 @@ void PreviewGenerator::parse_media()
 {
   if (auto ftg = footage.lock()) {
     if (!ftg->video_tracks.empty()) {
-      auto ms = ftg->video_tracks.front();
-      // FIXME: this reemplements what was used to be here to infer an image sequence from ffmpeg. Both are awful hacks
-      if (qFuzzyCompare(ms->video_frame_rate, 0.0) && ms->infinite_length && ftg->location().contains('%')) {
-        // must be an image sequence
-        ms->infinite_length = false;
-        ms->video_frame_rate = 25;
+      if (const auto ms = ftg->video_tracks.front(); ms->type_ == media_handling::StreamType::IMAGE) {
+        contains_still_image = true;
+        // FIXME: this reemplements what was used to be here to infer an image sequence from ffmpeg. Both are awful hacks
+        if (ftg->location().contains("%")) {
+          // must be an image sequence
+          ms->infinite_length = false;
+          ms->video_frame_rate = 25;
+        }
       }
     }
 
@@ -111,7 +113,7 @@ void PreviewGenerator::parse_media()
       finalize_media();
     }
   } else {
-    //TODO:
+    qCritical() << "Footage object is NULL";
   }
 }
 

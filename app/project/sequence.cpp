@@ -82,7 +82,7 @@ Sequence::Sequence(QVector<std::shared_ptr<Media>>& media_list, const QString& s
           if (!qFuzzyCompare(ms->video_frame_rate, 0.0)) {
             frame_rate_ = ms->video_frame_rate * ftg->speed_;
 
-            if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
+            if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
               frame_rate_ *= 2;
             }
 
@@ -93,6 +93,7 @@ Sequence::Sequence(QVector<std::shared_ptr<Media>>& media_list, const QString& s
         }//for
         if (!got_audio_values && !ftg->audio_tracks.empty()) {
           const auto ms = ftg->audio_tracks.front();
+          Q_ASSERT(ms);
           audio_frequency_ = ms->audio_frequency;
           got_audio_values = true;
         }

@@ -49,13 +49,15 @@ namespace
   const auto FRAME_RATE_ARG_FORMAT = 'f';
 }
 
-QString get_interlacing_name(const ScanMethod interlacing)
+QString get_interlacing_name(const media_handling::FieldOrder interlacing)
 {
   switch (interlacing) {
-    case ScanMethod::PROGRESSIVE: return QCoreApplication::translate("InterlacingName", "None (Progressive)");
-    case ScanMethod::TOP_FIRST: return QCoreApplication::translate("InterlacingName", "Top Field First");
-    case ScanMethod::BOTTOM_FIRST: return QCoreApplication::translate("InterlacingName", "Bottom Field First");
-    default: return QCoreApplication::translate("InterlacingName", "Invalid");
+    case media_handling::FieldOrder::PROGRESSIVE:
+      return QCoreApplication::translate("InterlacingName", "None (Progressive)");
+    case media_handling::FieldOrder::TOP_FIRST:
+      return QCoreApplication::translate("InterlacingName", "Top Field First");
+    case media_handling::FieldOrder::BOTTOM_FIRST:
+      return QCoreApplication::translate("InterlacingName", "Bottom Field First");
   }
 }
 
@@ -210,7 +212,7 @@ void Media::updateTooltip(const QString& error)
               if (i > 0) {
                 tool_tip_ += ", ";
               }
-              if (ftg->video_tracks.at(i)->fieldOrder() == ScanMethod::PROGRESSIVE) {
+              if (ftg->video_tracks.at(i)->fieldOrder() == media_handling::FieldOrder::PROGRESSIVE) {
                 tool_tip_ += QString::number(ftg->video_tracks.at(i)->video_frame_rate * ftg->speed_);
               } else {
                 qDebug() << "Interlaced footage";
@@ -228,7 +230,11 @@ void Media::updateTooltip(const QString& error)
             if (i > 0) {
               tool_tip_ += ", ";
             }
-            tool_tip_ += get_interlacing_name(ftg->video_tracks.at(i)->fieldOrder());
+            if (const auto f_order = ftg->video_tracks.at(i)->fieldOrder()) {
+              tool_tip_ += get_interlacing_name(f_order.value());
+            } else {
+              tool_tip_ += "Invalid";
+            }
           }
         }
 

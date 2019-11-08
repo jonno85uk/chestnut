@@ -156,7 +156,8 @@ bool Clip::usesCacher() const
  * @brief open_worker
  * @return true==success
  */
-bool Clip::openWorker() {
+bool Clip::openWorker()
+{
   if (timeline_info.media == nullptr) {
     if (timeline_info.track_ >= 0) {
       media_handling_.frame_ = av_frame_alloc();
@@ -235,7 +236,8 @@ bool Clip::openWorker() {
       }
     }
 
-    if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
+
+    if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
       max_queue_size *= 2;
     }
 
@@ -286,12 +288,21 @@ bool Clip::openWorker() {
 
       AVFilterContext* last_filter = buffersrc_ctx;
 
-      if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
+      if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
         AVFilterContext* yadif_filter;
         char yadif_args[100];
-        snprintf(yadif_args, sizeof(yadif_args), "mode=3:parity=%d", ((ms->fieldOrder() == ScanMethod::TOP_FIRST) ? 0 : 1));
-        avfilter_graph_create_filter(&yadif_filter, avfilter_get_by_name("yadif"), "yadif", yadif_args, nullptr, filter_graph);
-
+        snprintf(yadif_args,
+                 sizeof(yadif_args),
+                 "mode=3:parity=%d",
+                 ((ms->fieldOrder() == media_handling::FieldOrder::TOP_FIRST) ? 0 : 1));
+        //TODO: check return values
+        constexpr auto deinterlacer = "yadif";
+        avfilter_graph_create_filter(&yadif_filter,
+                                     avfilter_get_by_name(deinterlacer),
+                                     deinterlacer,
+                                     yadif_args,
+                                     nullptr,
+                                     filter_graph);
         avfilter_link(last_filter, 0, yadif_filter, 0);
         last_filter = yadif_filter;
       }
@@ -889,7 +900,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
 
     int64_t target_pts = qMax(static_cast<int64_t>(0), playhead_to_timestamp(playhead));
     int64_t second_pts = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
-    if (ms->fieldOrder() != ScanMethod::PROGRESSIVE) {
+    if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
       target_pts *= 2;
       second_pts *= 2;
     }

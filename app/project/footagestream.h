@@ -47,7 +47,7 @@ namespace project {
 
       void make_square_thumb();
       void setStreamInfo(media_handling::MediaStreamPtr stream_info);
-      ScanMethod fieldOrder() const;
+      std::optional<media_handling::FieldOrder> fieldOrder() const;
 
       virtual bool load(QXmlStreamReader& stream) override;
       virtual bool save(QXmlStreamWriter& stream) const override;

@@ -64,25 +64,21 @@ void FootageStream::setStreamInfo(MediaStreamPtr stream_info)
   qDebug() << "Stream Info set, file_index ="  << file_index << this;
 }
 
-project::ScanMethod FootageStream::fieldOrder() const
+std::optional<media_handling::FieldOrder> FootageStream::fieldOrder() const
 {
   if (!stream_info_) {
     qDebug() << "Stream Info not available, file_index =" << file_index << this;
-    return project::ScanMethod::UNKNOWN;
+    return {};
+  }
+  if (stream_info_->type() == StreamType::IMAGE) {
+    return media_handling::FieldOrder::PROGRESSIVE;
   }
   bool isokay = false;
   const auto f_order(stream_info_->property<FieldOrder>(MediaProperty::FIELD_ORDER, isokay));
   if (!isokay) {
-    return project::ScanMethod::UNKNOWN;
+    return {};
   }
-  switch (f_order) {
-    case FieldOrder::PROGRESSIVE:
-      return project::ScanMethod::PROGRESSIVE;
-    case FieldOrder::TOP_FIRST:
-      return project::ScanMethod::TOP_FIRST;
-    case FieldOrder::BOTTOM_FIRST:
-      return project::ScanMethod::BOTTOM_FIRST;
-  }
+  return f_order;
 }
 
 bool FootageStream::load(QXmlStreamReader& stream)

@@ -85,7 +85,7 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
   grid->addWidget(track_list, row, 0, 1, 2);
   row++;
 
-  if (ftg->video_tracks.size() > 0) {
+  if (!ftg->video_tracks.empty() && (ftg->video_tracks.front() != nullptr) ) {
     // frame conforming
     if (!ftg->video_tracks.front()->infinite_length) {
       grid->addWidget(new QLabel(tr("Conform to Frame Rate:")), row, 0);
@@ -99,10 +99,12 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
 
     // deinterlacing mode
     interlacing_box = new QComboBox();
-    interlacing_box->addItem(tr("Auto (%1)").arg(get_interlacing_name(ftg->video_tracks.front()->fieldOrder())));
-    interlacing_box->addItem(get_interlacing_name(ScanMethod::PROGRESSIVE));
-    interlacing_box->addItem(get_interlacing_name(ScanMethod::TOP_FIRST));
-    interlacing_box->addItem(get_interlacing_name(ScanMethod::BOTTOM_FIRST));
+    if (const auto f_order = ftg->video_tracks.front()->fieldOrder()) {
+      interlacing_box->addItem(tr("Auto (%1)").arg(get_interlacing_name(f_order.value())));
+      interlacing_box->addItem(get_interlacing_name(media_handling::FieldOrder::PROGRESSIVE));
+      interlacing_box->addItem(get_interlacing_name(media_handling::FieldOrder::TOP_FIRST));
+      interlacing_box->addItem(get_interlacing_name(media_handling::FieldOrder::BOTTOM_FIRST));
+    }
 
     interlacing_box->setCurrentIndex(0);
 
