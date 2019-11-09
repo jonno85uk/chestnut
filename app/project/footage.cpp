@@ -36,8 +36,6 @@ using media_handling::MediaProperty;
 Footage::Footage(const Footage& cpy)
   : ProjectItem(cpy),
     length_(cpy.length_),
-    video_tracks(cpy.video_tracks),
-    audio_tracks(cpy.audio_tracks),
     proj_dir_(cpy.proj_dir_),
     save_id(0),
     folder_(cpy.folder_),
@@ -49,7 +47,9 @@ Footage::Footage(const Footage& cpy)
     ready_(cpy.ready_.load()),
     has_preview_(cpy.has_preview_.load()),
     url_(cpy.url_),
-    parent_mda_(/*cpy.parent_mda_*/) // this parent is of the wrong media object
+    parent_mda_(/*cpy.parent_mda_*/), // this parent is of the wrong media object
+    video_tracks(cpy.video_tracks),
+    audio_tracks(cpy.audio_tracks)
 {
 
 }
@@ -132,6 +132,34 @@ void Footage::parseStreams()
   }
 }
 
+bool Footage::addVideoTrack(project::FootageStreamPtr track)
+{
+  if (!track) {
+    return false;
+  }
+  video_tracks.append(std::move(track));
+  return true;
+}
+
+QVector<project::FootageStreamPtr> Footage::videoTracks() const
+{
+  return video_tracks;
+}
+
+bool Footage::addAudioTrack(project::FootageStreamPtr track)
+{
+  if (!track) {
+    return false;
+  }
+  audio_tracks.append(std::move(track));
+  return true;
+}
+
+QVector<project::FootageStreamPtr> Footage::audioTracks() const
+{
+  return audio_tracks;
+}
+
 bool Footage::load(QXmlStreamReader& stream)
 {
   // attributes
@@ -163,10 +191,10 @@ bool Footage::load(QXmlStreamReader& stream)
   bool okay;
   while (stream.readNextStartElement()) {
     auto elem_name = stream.name().toString().toLower();
-    if ( (elem_name == "video") || (elem_name == "audio") ) {
+    if ( (elem_name == "video") || (elem_name == "audio") || (elem_name == "image")) {
       auto ms = std::make_shared<project::FootageStream>();
       ms->load(stream);
-      if (elem_name == "video") {
+      if ( (elem_name == "video") || (elem_name == "image") ) {
         video_tracks.append(ms);
       } else {
         audio_tracks.append(ms);
@@ -176,6 +204,7 @@ bool Footage::load(QXmlStreamReader& stream)
     } else if (elem_name == "url") {
       url_ = stream.readElementText();
       media_source_ = media_handling::createSource(url_.toStdString());
+      Q_ASSERT(media_source_);
     } else if (elem_name == "duration") {
       length_ = stream.readElementText().toLong();
     } else if (elem_name == "marker") {
@@ -195,12 +224,14 @@ bool Footage::load(QXmlStreamReader& stream)
   for (int i = 0; i < audio_tracks.size(); ++i) {
     auto strm(media_source_->audioStream(i));
     Q_ASSERT(strm);
+    Q_ASSERT(audio_tracks.at(i));
     audio_tracks.at(i)->setStreamInfo(strm);
   }
 
   for (int i = 0; i < video_tracks.size(); ++i) {
     auto strm(media_source_->visualStream(i));
     Q_ASSERT(strm);
+    Q_ASSERT(video_tracks.at(i));
     video_tracks.at(i)->setStreamInfo(strm);
   }
 
@@ -329,7 +360,7 @@ FootageStreamPtr Footage::get_stream_from_file_index(const bool video, const int
 {
   FootageStreamPtr stream;
   auto finder = [index] (auto tracks){
-    for (auto track : tracks) {
+    for (const auto& track : tracks) {
       if (track->file_index == index) {
         return track;
       }

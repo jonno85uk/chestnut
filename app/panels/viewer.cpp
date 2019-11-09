@@ -781,50 +781,52 @@ SequencePtr Viewer::createFootageSequence(const MediaPtr& mda) const
 
   sqn->setFrameRate(MEDIA_FRAME_RATE);
 
-  if (!ftg->video_tracks.empty()) {
-    const auto video_stream = ftg->video_tracks.front();
-    sqn->setWidth(video_stream->video_width);
-    sqn->setHeight(video_stream->video_height);
-    if ( (video_stream->video_frame_rate > 0) && (!video_stream->infinite_length) ) { // not image?
-      sqn->setFrameRate(video_stream->video_frame_rate * ftg->speed_);
-    }
+  if (!ftg->videoTracks().empty()) {
+    if (const auto video_stream = ftg->videoTracks().front()) {
+      sqn->setWidth(video_stream->video_width);
+      sqn->setHeight(video_stream->video_height);
+      if ( (video_stream->video_frame_rate > 0) && (!video_stream->infinite_length) ) { // not image?
+        sqn->setFrameRate(video_stream->video_frame_rate * ftg->speed_);
+      }
 
-    auto clp = std::make_shared<Clip>(sqn);
-    clp->timeline_info.media        = mda;
-    clp->timeline_info.media_stream = video_stream->file_index;
-    clp->timeline_info.in           = 0;
-    clp->timeline_info.out          = ftg->totalLengthInFrames(sqn->frameRate());
-    if (clp->timeline_info.out <= 0) {
-      clp->timeline_info.out = 150;
+      auto clp = std::make_shared<Clip>(sqn);
+      clp->timeline_info.media        = mda;
+      clp->timeline_info.media_stream = video_stream->file_index;
+      clp->timeline_info.in           = 0;
+      clp->timeline_info.out          = ftg->totalLengthInFrames(sqn->frameRate());
+      if (clp->timeline_info.out <= 0) {
+        clp->timeline_info.out = 150;
+      }
+      clp->timeline_info.track_ = -1;
+      clp->timeline_info.clip_in  = 0;
+      clp->recalculateMaxLength();
+      sqn->addClip(clp);
     }
-    clp->timeline_info.track_ = -1;
-    clp->timeline_info.clip_in  = 0;
-    clp->recalculateMaxLength();
-    sqn->addClip(clp);
   } else {
     sqn->setWidth(MEDIA_WIDTH);
     sqn->setHeight(MEDIA_HEIGHT);
   }
 
-  if (!ftg->audio_tracks.empty()) {
-    const auto audio_stream = ftg->audio_tracks.front();
-    sqn->setAudioFrequency(audio_stream->audio_frequency);
+  if (!ftg->audioTracks().empty()) {
+    if (const auto audio_stream = ftg->audioTracks().front()) {
+      sqn->setAudioFrequency(audio_stream->audio_frequency);
 
-    auto clp = std::make_shared<Clip>(sqn);
-    clp->timeline_info.media        = mda;
-    clp->timeline_info.media_stream = audio_stream->file_index;
-    clp->timeline_info.in           = 0;
-    clp->timeline_info.out          = ftg->totalLengthInFrames(sqn->frameRate());
-    clp->timeline_info.track_       = 0;
-    clp->timeline_info.clip_in      = 0;
-    clp->recalculateMaxLength();
-    sqn->addClip(clp);
+      auto clp = std::make_shared<Clip>(sqn);
+      clp->timeline_info.media        = mda;
+      clp->timeline_info.media_stream = audio_stream->file_index;
+      clp->timeline_info.in           = 0;
+      clp->timeline_info.out          = ftg->totalLengthInFrames(sqn->frameRate());
+      clp->timeline_info.track_       = 0;
+      clp->timeline_info.clip_in      = 0;
+      clp->recalculateMaxLength();
+      sqn->addClip(clp);
 
-    if (ftg->video_tracks.empty()) {
-      viewer_widget->waveform         = true;
-      viewer_widget->waveform_clip    = clp;
-      viewer_widget->waveform_ms      = audio_stream;
-      viewer_widget->frame_update();
+      if (ftg->videoTracks().empty()) {
+        viewer_widget->waveform         = true;
+        viewer_widget->waveform_clip    = clp;
+        viewer_widget->waveform_ms      = audio_stream;
+        viewer_widget->frame_update();
+      }
     }
   } else {
     sqn->setAudioFrequency(MEDIA_AUDIO_FREQUENCY);

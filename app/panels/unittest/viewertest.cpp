@@ -18,9 +18,9 @@ void ViewerTest::testCaseCreateFootageSequenceAudioVideoClip()
   auto ftg = std::make_shared<Footage>();
   mda->setFootage(ftg);
 
-  auto strm = std::make_shared<project::FootageStream>();
-  ftg->video_tracks.append(strm);
-  ftg->audio_tracks.append(strm);
+  auto strm = std::make_shared<project::FootageStream>(ftg, nullptr);
+  ftg->videoTracks().append(strm);
+  ftg->audioTracks().append(strm);
 
   Viewer vwr;
   auto sqn = vwr.createFootageSequence(mda);

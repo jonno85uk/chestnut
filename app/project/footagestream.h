@@ -35,10 +35,11 @@ namespace project {
     UNKNOWN
   };
 
+
   class FootageStream : public project::IXMLStreamer {
     public:
-      FootageStream();
-      explicit FootageStream(media_handling::MediaStreamPtr stream_info);
+      FootageStream() = default;
+      FootageStream(media_handling::MediaStreamPtr stream_info);
 
       FootageStream(const FootageStream& cpy) = delete;
       FootageStream(const FootageStream&& cpy) = delete;

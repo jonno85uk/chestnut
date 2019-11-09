@@ -828,12 +828,14 @@ void Clip::refresh()
 {
   // validates media if it was replaced
   if (replaced && timeline_info.media != nullptr && timeline_info.media->type() == MediaType::FOOTAGE) {
-    FootagePtr m = timeline_info.media->object<Footage>();
+    auto ftg = timeline_info.media->object<Footage>();
 
-    if ((mediaType() == ClipType::VISUAL) && !m->video_tracks.empty())  {
-      timeline_info.media_stream = m->video_tracks.front()->file_index;
-    } else if ((mediaType() == ClipType::AUDIO) && !m->audio_tracks.empty()) {
-      timeline_info.media_stream = m->audio_tracks.front()->file_index;
+    if ((mediaType() == ClipType::VISUAL) && !ftg->videoTracks().empty())  {
+      Q_ASSERT(ftg->videoTracks().front());
+      timeline_info.media_stream = ftg->videoTracks().front()->file_index;
+    } else if ((mediaType() == ClipType::AUDIO) && !ftg->audioTracks().empty()) {
+      Q_ASSERT(ftg->audioTracks().front());
+      timeline_info.media_stream = ftg->audioTracks().front()->file_index;
     }
   }
   replaced = false;
@@ -1417,8 +1419,9 @@ long Clip::maximumLength() const
   return media_handling_.calculated_length_;
 }
 
-int Clip::width() {
-  if (timeline_info.media == nullptr && sequence != nullptr) {
+int Clip::width()
+{
+  if ( (timeline_info.media == nullptr) && (sequence != nullptr) ) {
     return sequence->width();
   }
 
@@ -1426,13 +1429,11 @@ int Clip::width() {
     case MediaType::FOOTAGE:
     {
       auto ftg = timeline_info.media->object<Footage>();
-      if (!ftg) return 0;
-      FootageStreamPtr ms;
-      if (timeline_info.isVideo()) {
-        ms = ftg->video_stream_from_file_index(timeline_info.media_stream);
-      } else {
-        ms = ftg->audio_stream_from_file_index(timeline_info.media_stream);
+      if (!ftg) {
+        return 0;
       }
+      const auto ms = mediaType() == ClipType::VISUAL ? ftg->video_stream_from_file_index(timeline_info.media_stream) :
+                                                        ftg->audio_stream_from_file_index(timeline_info.media_stream);
 
       if (ms != nullptr) {
         return ms->video_width;
@@ -1468,12 +1469,8 @@ int Clip::height() {
       if (!ftg) {
         return 0;
       }
-      FootageStreamPtr ms;
-      if (timeline_info.isVideo()) {
-        ms = ftg->video_stream_from_file_index(timeline_info.media_stream);
-      } else {
-        ms = ftg->audio_stream_from_file_index(timeline_info.media_stream);
-      }
+      const auto ms(timeline_info.isVideo() ? ftg->video_stream_from_file_index(timeline_info.media_stream)
+                                            : ftg->audio_stream_from_file_index(timeline_info.media_stream));
 
       if (ms != nullptr) {
         return ms->video_height;

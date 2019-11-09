@@ -39,11 +39,9 @@ using FootagePtr = std::shared_ptr<Footage>;
 using FootageWPtr = std::weak_ptr<Footage>;
 
 
-class Footage : public project::ProjectItem {
+class Footage : public std::enable_shared_from_this<Footage>, public project::ProjectItem {
   public:
     int64_t length_{0};
-    QVector<project::FootageStreamPtr> video_tracks;
-    QVector<project::FootageStreamPtr> audio_tracks;
 
     QDir proj_dir_{};
     int save_id{-1};
@@ -60,10 +58,7 @@ class Footage : public project::ProjectItem {
     std::atomic_bool ready_; /*{false};*/
     std::atomic_bool has_preview_; /*{false};*/
 
-    Footage()
-    {
-
-    }
+    Footage() = delete;
     explicit Footage(const std::shared_ptr<Media>& parent);
     Footage(QString url, const std::shared_ptr<Media>& parent);
     Footage(const Footage& cpy);
@@ -101,6 +96,11 @@ class Footage : public project::ProjectItem {
      */
     void parseStreams();
 
+    bool addVideoTrack(project::FootageStreamPtr track);
+    QVector<project::FootageStreamPtr> videoTracks() const;
+    bool addAudioTrack(project::FootageStreamPtr track);
+    QVector<project::FootageStreamPtr> audioTracks() const;
+
     virtual bool load(QXmlStreamReader& stream) override;
     virtual bool save(QXmlStreamWriter& stream) const override;
   private:
@@ -108,6 +108,8 @@ class Footage : public project::ProjectItem {
     QString url_;
     std::weak_ptr<Media> parent_mda_;
     media_handling::MediaSourcePtr media_source_ {nullptr};
+    QVector<project::FootageStreamPtr> video_tracks;
+    QVector<project::FootageStreamPtr> audio_tracks;
 
     project::FootageStreamPtr get_stream_from_file_index(const bool video, const int index);
 };

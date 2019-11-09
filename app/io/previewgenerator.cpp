@@ -95,8 +95,8 @@ PreviewGenerator::~PreviewGenerator()
 void PreviewGenerator::parse_media()
 {
   if (auto ftg = footage.lock()) {
-    if (!ftg->video_tracks.empty()) {
-      if (const auto ms = ftg->video_tracks.front(); ms->type_ == media_handling::StreamType::IMAGE) {
+    if (!ftg->videoTracks().empty()) {
+      if (const auto ms = ftg->videoTracks().front(); ms->type_ == media_handling::StreamType::IMAGE) {
         contains_still_image = true;
         // FIXME: this reemplements what was used to be here to infer an image sequence from ffmpeg. Both are awful hacks
         if (ftg->location().contains("%")) {
@@ -126,7 +126,7 @@ bool PreviewGenerator::retrieve_preview(const QString& hash)
 
   bool found = true;
   if (auto ftg = footage.lock()) {
-    for (auto& stream: ftg->video_tracks) {
+    for (auto& stream: ftg->videoTracks()) {
       auto thumb_path = get_thumbnail_path(hash, stream);
       QFile f(thumb_path);
       if (f.exists() && stream->video_preview.load(thumb_path)) {
@@ -138,7 +138,7 @@ bool PreviewGenerator::retrieve_preview(const QString& hash)
       }
     } //for
 
-    for (auto stream: ftg->audio_tracks) {
+    for (auto& stream: ftg->audioTracks()) {
       auto waveform_path = get_waveform_path(hash, stream);
       QFile f(waveform_path);
       if (f.exists()) {
@@ -158,10 +158,12 @@ bool PreviewGenerator::retrieve_preview(const QString& hash)
     } //for
 
     if (!found) {
-      for (const auto& stream: ftg->video_tracks) {
+      for (const auto& stream: ftg->videoTracks()) {
+        Q_ASSERT(stream);
         stream->preview_done = false;
       }
-      for (const auto& stream: ftg->audio_tracks) {
+      for (const auto& stream: ftg->audioTracks()) {
+        Q_ASSERT(stream);
         stream->audio_preview.clear();
         stream->preview_done = false;
       }
@@ -176,7 +178,7 @@ void PreviewGenerator::finalize_media()
     ftg->ready_ = true;
 
     if (!cancelled) {
-      if (ftg->video_tracks.empty()) {
+      if (ftg->videoTracks().empty()) {
         emit set_icon(ICON_TYPE_AUDIO, replace);
       } else if (contains_still_image) {
         emit set_icon(ICON_TYPE_IMAGE, replace);
@@ -359,10 +361,10 @@ void PreviewGenerator::generate_waveform()
         // check if we've got all our previews
         if (retrieve_duration) {
           done = false; //FIXME: never used
-        } else if (ftg->audio_tracks.empty()) {
+        } else if (ftg->audioTracks().empty()) {
           done = true;
-          for (const auto& stream : ftg->video_tracks) {
-            if (!stream->preview_done) {
+          for (const auto& stream : ftg->videoTracks()) {
+            if (stream && !stream->preview_done) {
               done = false;
               break;
             }
@@ -376,10 +378,13 @@ void PreviewGenerator::generate_waveform()
       }
     }//while
 
-    for (const auto& stream : ftg->audio_tracks) {
-      if (!stream) continue;
+    for (const auto& stream : ftg->audioTracks()) {
+      if (!stream) {
+        continue;
+      }
       stream->preview_done = true;
     }
+
     av_frame_free(&temp_frame);
     av_packet_free(&packet);
     for (auto codec : codec_ctx){
@@ -499,7 +504,8 @@ void PreviewGenerator::run()
           generate_waveform();
 
           // save preview to file
-          for (auto& ms : ftg->video_tracks) {
+          for (auto& ms : ftg->videoTracks()) {
+            Q_ASSERT(ms);
             const auto thumbPath = get_thumbnail_path(hash, ms);
             auto tmp = ms->video_preview;
             if (!tmp.save(thumbPath, THUMB_PREVIEW_FORMAT)) {
@@ -507,7 +513,8 @@ void PreviewGenerator::run()
             }
           }
 
-          for (auto& ms : ftg->audio_tracks) {
+          for (auto& ms : ftg->audioTracks()) {
+            Q_ASSERT(ms);
             QFile f(get_waveform_path(hash, ms));
             f.open(QFile::WriteOnly);
             if (f.write(ms->audio_preview.constData(), ms->audio_preview.size()) < 0) {
@@ -536,23 +543,21 @@ void PreviewGenerator::run()
 
 bool PreviewGenerator::generate_image_thumbnail(const FootagePtr& ftg) const
 {
-  bool success = true;
-
   // TODO: address image sequences. current implementation has false positives
   const QImage img(ftg->location());
-  FootageStreamPtr ms = std::make_shared<FootageStream>();
-  ms->enabled           = true;
-  ms->file_index        = 0;
-  ms->video_preview     = img.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
-  ms->make_square_thumb();
-  ms->preview_done      = true;
-  ms->video_height      = img.height();
-  ms->video_width       = img.width();
-  ms->infinite_length   = true;
-  ms->video_frame_rate  = IMAGE_FRAMERATE;
-  ms->type_ = media_handling::StreamType::VIDEO;
-  ftg->video_tracks.append(ms);
-  return success;
+  if (auto ms = ftg->videoTracks().front()) {
+    ms->enabled           = true;
+    ms->file_index        = 0;
+    ms->video_preview     = img.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
+    ms->make_square_thumb();
+    ms->preview_done      = true;
+    ms->video_height      = img.height();
+    ms->video_width       = img.width();
+    ms->infinite_length   = true;
+    ms->video_frame_rate  = IMAGE_FRAMERATE;
+    return true;
+  }
+  return false;
 }
 
 void PreviewGenerator::cancel()

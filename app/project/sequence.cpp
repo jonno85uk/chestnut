@@ -64,7 +64,7 @@ Sequence::Sequence(QVector<std::shared_ptr<Media>>& media_list, const QString& s
   bool got_video_values = false;
   bool got_audio_values = false;
   for (const auto& mda : media_list){
-     if (mda == nullptr) {
+    if (mda == nullptr) {
       qCritical() << "Null MediaPtr";
       continue;
     }
@@ -76,7 +76,7 @@ Sequence::Sequence(QVector<std::shared_ptr<Media>>& media_list, const QString& s
           break;
         }
 
-        for (const auto& ms : ftg->video_tracks) {
+        for (const auto& ms : ftg->videoTracks()) {
           width_ = ms->video_width;
           height_ = ms->video_height;
           if (!qFuzzyCompare(ms->video_frame_rate, 0.0)) {
@@ -91,11 +91,13 @@ Sequence::Sequence(QVector<std::shared_ptr<Media>>& media_list, const QString& s
             break;
           }
         }//for
-        if (!got_audio_values && !ftg->audio_tracks.empty()) {
-          const auto ms = ftg->audio_tracks.front();
-          Q_ASSERT(ms);
-          audio_frequency_ = ms->audio_frequency;
-          got_audio_values = true;
+
+        const auto tracks(ftg->audioTracks());
+        if (!got_audio_values && !tracks.empty()) {
+          if (const auto ms = tracks.front()) {
+            audio_frequency_ = ms->audio_frequency;
+            got_audio_values = true;
+          }
         }
       }
         break;
@@ -179,40 +181,40 @@ void Sequence::hardDeleteTransition(const ClipPtr& c, const int32_t type)
   } else {
     c->transition_.closing_ = nullptr;
   }
-//TODO: reassess
-//  auto tran = (type == TA_OPENING_TRANSITION) ? c->transition_.opening_ : c->transition_.closing_;
-//  if (tran == nullptr) {
-//    return;
-//  }
-//  auto del = true;
+  //TODO: reassess
+  //  auto tran = (type == TA_OPENING_TRANSITION) ? c->transition_.opening_ : c->transition_.closing_;
+  //  if (tran == nullptr) {
+  //    return;
+  //  }
+  //  auto del = true;
 
-//  auto transition_for_delete = transitions_.at(transition_index);
-//  if (auto secondary = transition_for_delete->secondary_clip.lock()) {
-//    for (const auto& comp : clips_) {
-//      if ( (!comp) && (c != comp) ) {
-//        continue;
-//      }
-//      if ( (c->opening_transition == transition_index) || (c->closing_transition == transition_index) ) {
-//        if (type == TA_OPENING_TRANSITION) {
-//          // convert to closing transition
-//          transition_for_delete->parent_clip = secondary;
-//        }
+  //  auto transition_for_delete = transitions_.at(transition_index);
+  //  if (auto secondary = transition_for_delete->secondary_clip.lock()) {
+  //    for (const auto& comp : clips_) {
+  //      if ( (!comp) && (c != comp) ) {
+  //        continue;
+  //      }
+  //      if ( (c->opening_transition == transition_index) || (c->closing_transition == transition_index) ) {
+  //        if (type == TA_OPENING_TRANSITION) {
+  //          // convert to closing transition
+  //          transition_for_delete->parent_clip = secondary;
+  //        }
 
-//        del = false;
-//        secondary.reset();
-//      }
-//    }//for
-//  }
+  //        del = false;
+  //        secondary.reset();
+  //      }
+  //    }//for
+  //  }
 
-//  if (del) {
-//    transitions_[transition_index] = nullptr;
-//  }
+  //  if (del) {
+  //    transitions_[transition_index] = nullptr;
+  //  }
 
-//  if (type == TA_OPENING_TRANSITION) {
-//    c->opening_transition = -1;
-//  } else {
-//    c->closing_transition = -1;
-//  }
+  //  if (type == TA_OPENING_TRANSITION) {
+  //    c->opening_transition = -1;
+  //  } else {
+  //    c->closing_transition = -1;
+  //  }
 }
 
 
@@ -489,7 +491,7 @@ bool Sequence::load(QXmlStreamReader& stream)
         // NOTE: ensure Tracks are loaded first otherwise they won't get used
         if (clp->isCreatedObject()) {
           auto created_obj = std::make_shared<ObjectClip>(*clp);
-		  addClip(created_obj);
+          addClip(created_obj);
         } else {
           addClip(clp);
         }
