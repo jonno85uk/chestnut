@@ -447,7 +447,7 @@ QVariant Media::data(const int32_t column, const int32_t role)
           if (type() == MediaType::SEQUENCE) {
             auto seq = object<Sequence>();
             Q_ASSERT(seq);
-            return frame_to_timecode(seq->endFrame(), e_config.timecode_view, seq->frameRate());
+            return frame_to_timecode(seq->endFrame(), global::config.timecode_view, seq->frameRate());
           }
           if (type() == MediaType::FOOTAGE) {
             auto ftg = object<Footage>();
@@ -460,7 +460,7 @@ QVariant Media::data(const int32_t column, const int32_t role)
             }
 
             if (const auto len = ftg->activeLengthInFrames(rate); len > 0) {
-              return frame_to_timecode(len, e_config.timecode_view, rate);
+              return frame_to_timecode(len, global::config.timecode_view, rate);
             }
           }
         }

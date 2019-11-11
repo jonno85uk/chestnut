@@ -90,7 +90,7 @@ EffectField::EffectField(EffectRow *parent, const EffectFieldType t, const QStri
     case EffectFieldType::STRING:
     {
       auto edit = new TextEditEx();
-      edit->setFixedHeight(edit->fontMetrics().lineSpacing()* e_config.effect_textbox_lines);
+      edit->setFixedHeight(edit->fontMetrics().lineSpacing()* global::config.effect_textbox_lines);
       edit->setUndoRedoEnabled(true);
       ui_element = edit;
       connect(edit, SIGNAL(textChanged()), this, SLOT(ui_element_change()));

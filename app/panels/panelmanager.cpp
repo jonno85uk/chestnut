@@ -157,7 +157,7 @@ void PanelManager::refreshPanels(const bool modified)
 QDockWidget* PanelManager::getFocusedPanel()
 {
   QDockWidget* w = nullptr;
-  if (e_config.hover_focus) {
+  if (global::config.hover_focus) {
     if (projectViewer().underMouse()) {
       w = &projectViewer();
     } else if (fxControls().underMouse()) {

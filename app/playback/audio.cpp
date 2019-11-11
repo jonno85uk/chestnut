@@ -63,7 +63,7 @@ void init_audio() {
     stop_audio();
 
     QAudioFormat audio_format;
-    audio_format.setSampleRate(e_config.audio_rate);
+    audio_format.setSampleRate(global::config.audio_rate);
     audio_format.setChannelCount(2);
     audio_format.setSampleSize(16);
     audio_format.setCodec("audio/pcm");
@@ -333,8 +333,8 @@ bool start_recording() {
     }
 
     QAudioFormat audio_format = audio_output->format();
-    if (e_config.recording_mode != audio_format.channelCount()) {
-        audio_format.setChannelCount(e_config.recording_mode);
+    if (global::config.recording_mode != audio_format.channelCount()) {
+        audio_format.setChannelCount(global::config.recording_mode);
     }
     QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
     if (!info.isFormatSupported(audio_format)) {

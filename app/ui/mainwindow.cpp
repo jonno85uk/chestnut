@@ -268,10 +268,10 @@ void MainWindow::initialise()
     config_dir.mkpath(".");
     config_fn = config_path + "/" + FILE_CONFIG;
     if (QFileInfo::exists(config_fn)) {
-      e_config.load(config_fn);
+      global::config.load(config_fn);
 
-      if (!e_config.css_path.isEmpty()) {
-        load_css_from_file(e_config.css_path);
+      if (!global::config.css_path.isEmpty()) {
+        load_css_from_file(global::config.css_path);
       }
     }
   }
@@ -795,12 +795,12 @@ void MainWindow::setup_menus() {
   track_lines = view_menu->addAction(tr("Track Lines"), this, SLOT(toggle_bool_action()));
   track_lines->setProperty("id", "tracklines");
   track_lines->setCheckable(true);
-  track_lines->setData(reinterpret_cast<quintptr>(&e_config.show_track_lines));
+  track_lines->setData(reinterpret_cast<quintptr>(&global::config.show_track_lines));
 
   rectified_waveforms = view_menu->addAction(tr("Rectified Waveforms"), this, SLOT(toggle_bool_action()));
   rectified_waveforms->setProperty("id", "rectifiedwaveforms");
   rectified_waveforms->setCheckable(true);
-  rectified_waveforms->setData(reinterpret_cast<quintptr>(&e_config.rectified_waveforms));
+  rectified_waveforms->setData(reinterpret_cast<quintptr>(&global::config.rectified_waveforms));
 
   view_menu->addSeparator();
 
@@ -878,7 +878,7 @@ void MainWindow::setup_menus() {
   loop_action = playback_menu->addAction(tr("Loop"), this, SLOT(toggle_bool_action()));
   loop_action->setProperty("id", "loop");
   loop_action->setCheckable(true);
-  loop_action->setData(reinterpret_cast<quintptr>(&e_config.loop));
+  loop_action->setData(reinterpret_cast<quintptr>(&global::config.loop));
 
   // INITIALIZE WINDOW MENU
 
@@ -992,72 +992,72 @@ void MainWindow::setup_menus() {
   selecting_also_seeks = tools_menu->addAction(tr("Selecting Also Seeks"), this, SLOT(toggle_bool_action()));
   selecting_also_seeks->setProperty("id", "selectingalsoseeks");
   selecting_also_seeks->setCheckable(true);
-  selecting_also_seeks->setData(reinterpret_cast<quintptr>(&e_config.select_also_seeks));
+  selecting_also_seeks->setData(reinterpret_cast<quintptr>(&global::config.select_also_seeks));
 
   edit_tool_also_seeks = tools_menu->addAction(tr("Edit Tool Also Seeks"), this, SLOT(toggle_bool_action()));
   edit_tool_also_seeks->setProperty("id", "editalsoseeks");
   edit_tool_also_seeks->setCheckable(true);
-  edit_tool_also_seeks->setData(reinterpret_cast<quintptr>(&e_config.edit_tool_also_seeks));
+  edit_tool_also_seeks->setData(reinterpret_cast<quintptr>(&global::config.edit_tool_also_seeks));
 
   edit_tool_selects_links = tools_menu->addAction(tr("Edit Tool Selects Links"), this, SLOT(toggle_bool_action()));
   edit_tool_selects_links->setProperty("id", "editselectslinks");
   edit_tool_selects_links->setCheckable(true);
-  edit_tool_selects_links->setData(reinterpret_cast<quintptr>(&e_config.edit_tool_selects_links));
+  edit_tool_selects_links->setData(reinterpret_cast<quintptr>(&global::config.edit_tool_selects_links));
 
   seek_also_selects = tools_menu->addAction(tr("Seek Also Selects"), this, SLOT(toggle_bool_action()));
   seek_also_selects->setProperty("id", "seekalsoselects");
   seek_also_selects->setCheckable(true);
-  seek_also_selects->setData(reinterpret_cast<quintptr>(&e_config.seek_also_selects));
+  seek_also_selects->setData(reinterpret_cast<quintptr>(&global::config.seek_also_selects));
 
   seek_to_end_of_pastes = tools_menu->addAction(tr("Seek to the End of Pastes"), this, SLOT(toggle_bool_action()));
   seek_to_end_of_pastes->setProperty("id", "seektoendofpastes");
   seek_to_end_of_pastes->setCheckable(true);
-  seek_to_end_of_pastes->setData(reinterpret_cast<quintptr>(&e_config.paste_seeks));
+  seek_to_end_of_pastes->setData(reinterpret_cast<quintptr>(&global::config.paste_seeks));
 
   scroll_wheel_zooms = tools_menu->addAction(tr("Scroll Wheel Zooms"), this, SLOT(toggle_bool_action()));
   scroll_wheel_zooms->setProperty("id", "scrollwheelzooms");
   scroll_wheel_zooms->setCheckable(true);
-  scroll_wheel_zooms->setData(reinterpret_cast<quintptr>(&e_config.scroll_zooms));
+  scroll_wheel_zooms->setData(reinterpret_cast<quintptr>(&global::config.scroll_zooms));
 
   enable_drag_files_to_timeline = tools_menu->addAction(tr("Enable Drag Files to Timeline"), this, SLOT(toggle_bool_action()));
   enable_drag_files_to_timeline->setProperty("id", "enabledragfilestotimeline");
   enable_drag_files_to_timeline->setCheckable(true);
-  enable_drag_files_to_timeline->setData(reinterpret_cast<quintptr>(&e_config.enable_drag_files_to_timeline));
+  enable_drag_files_to_timeline->setData(reinterpret_cast<quintptr>(&global::config.enable_drag_files_to_timeline));
 
   autoscale_by_default = tools_menu->addAction(tr("Auto-Scale By Default"), this, SLOT(toggle_bool_action()));
   autoscale_by_default->setProperty("id", "autoscalebydefault");
   autoscale_by_default->setCheckable(true);
-  autoscale_by_default->setData(reinterpret_cast<quintptr>(&e_config.autoscale_by_default));
+  autoscale_by_default->setData(reinterpret_cast<quintptr>(&global::config.autoscale_by_default));
 
   enable_seek_to_import = tools_menu->addAction(tr("Enable Seek to Import"), this, SLOT(toggle_bool_action()));
   enable_seek_to_import->setProperty("id", "enableseektoimport");
   enable_seek_to_import->setCheckable(true);
-  enable_seek_to_import->setData(reinterpret_cast<quintptr>(&e_config.enable_seek_to_import));
+  enable_seek_to_import->setData(reinterpret_cast<quintptr>(&global::config.enable_seek_to_import));
 
   enable_audio_scrubbing = tools_menu->addAction(tr("Audio Scrubbing"), this, SLOT(toggle_bool_action()));
   enable_audio_scrubbing->setProperty("id", "audioscrubbing");
   enable_audio_scrubbing->setCheckable(true);
-  enable_audio_scrubbing->setData(reinterpret_cast<quintptr>(&e_config.enable_audio_scrubbing));
+  enable_audio_scrubbing->setData(reinterpret_cast<quintptr>(&global::config.enable_audio_scrubbing));
 
   enable_drop_on_media_to_replace = tools_menu->addAction(tr("Enable Drop on Media to Replace"), this, SLOT(toggle_bool_action()));
   enable_drop_on_media_to_replace->setProperty("id", "enabledropmediareplace");
   enable_drop_on_media_to_replace->setCheckable(true);
-  enable_drop_on_media_to_replace->setData(reinterpret_cast<quintptr>(&e_config.drop_on_media_to_replace));
+  enable_drop_on_media_to_replace->setData(reinterpret_cast<quintptr>(&global::config.drop_on_media_to_replace));
 
   enable_hover_focus = tools_menu->addAction(tr("Enable Hover Focus"), this, SLOT(toggle_bool_action()));
   enable_hover_focus->setProperty("id", "hoverfocus");
   enable_hover_focus->setCheckable(true);
-  enable_hover_focus->setData(reinterpret_cast<quintptr>(&e_config.hover_focus));
+  enable_hover_focus->setData(reinterpret_cast<quintptr>(&global::config.hover_focus));
 
   set_name_and_marker = tools_menu->addAction(tr("Ask For Name When Setting Marker"), this, SLOT(toggle_bool_action()));
   set_name_and_marker->setProperty("id", "asknamemarkerset");
   set_name_and_marker->setCheckable(true);
-  set_name_and_marker->setData(reinterpret_cast<quintptr>(&e_config.set_name_with_marker));
+  set_name_and_marker->setData(reinterpret_cast<quintptr>(&global::config.set_name_with_marker));
 
   pause_at_out_point_action = tools_menu->addAction(tr("Pause At Out Point"), this, SLOT(toggle_bool_action()));
   pause_at_out_point_action->setProperty("id", "pauseoutpoint");
   pause_at_out_point_action->setCheckable(true);
-  pause_at_out_point_action->setData(reinterpret_cast<quintptr>(&e_config.pause_at_out_point));
+  pause_at_out_point_action->setData(reinterpret_cast<quintptr>(&global::config.pause_at_out_point));
 
   tools_menu->addSeparator();
 
@@ -1143,7 +1143,7 @@ void MainWindow::closeEvent(QCloseEvent *e) {
     }
     if (!config_dir.isEmpty() && !config_fn.isEmpty()) {
       // save settings
-      e_config.save(config_fn);
+      global::config.save(config_fn);
 
       // save panel layout
       QFile panel_config(config_dir + "/layout");
@@ -1231,7 +1231,7 @@ void MainWindow::sequenceLoaded(const SequencePtr& new_sequence)
   auto droppable = frame_rate_is_droppable(new_sequence->frameRate());
   if (!droppable && drop_frame_action->isChecked()) {
     drop_frame_action->setChecked(false);
-    e_config.timecode_view = TIMECODE_NONDROP;
+    global::config.timecode_view = TIMECODE_NONDROP;
     nondrop_frame_action->setChecked(true);
   }
   drop_frame_action->setEnabled(droppable);
@@ -1391,21 +1391,21 @@ void MainWindow::viewMenu_About_To_Be_Shown()
 {
   set_bool_action_checked(track_lines);
 
-  set_int_action_checked(frames_action, e_config.timecode_view);
-  set_int_action_checked(drop_frame_action, e_config.timecode_view);
-  set_int_action_checked(nondrop_frame_action, e_config.timecode_view);
-  set_int_action_checked(milliseconds_action, e_config.timecode_view);
+  set_int_action_checked(frames_action, global::config.timecode_view);
+  set_int_action_checked(drop_frame_action, global::config.timecode_view);
+  set_int_action_checked(nondrop_frame_action, global::config.timecode_view);
+  set_int_action_checked(milliseconds_action, global::config.timecode_view);
 
-  title_safe_off->setChecked(!e_config.show_title_safe_area);
-  title_safe_default->setChecked(e_config.show_title_safe_area && !e_config.use_custom_title_safe_ratio);
-  title_safe_43->setChecked(e_config.show_title_safe_area
-                            && e_config.use_custom_title_safe_ratio
-                            && qFuzzyCompare(e_config.custom_title_safe_ratio, FULLSCREEN_RATIO));
-  title_safe_169->setChecked(e_config.show_title_safe_area
-                             && e_config.use_custom_title_safe_ratio
-                             && qFuzzyCompare(e_config.custom_title_safe_ratio, SIXTEENBYNINE_RATIO));
-  title_safe_custom->setChecked(e_config.show_title_safe_area
-                                && e_config.use_custom_title_safe_ratio
+  title_safe_off->setChecked(!global::config.show_title_safe_area);
+  title_safe_default->setChecked(global::config.show_title_safe_area && !global::config.use_custom_title_safe_ratio);
+  title_safe_43->setChecked(global::config.show_title_safe_area
+                            && global::config.use_custom_title_safe_ratio
+                            && qFuzzyCompare(global::config.custom_title_safe_ratio, FULLSCREEN_RATIO));
+  title_safe_169->setChecked(global::config.show_title_safe_area
+                             && global::config.use_custom_title_safe_ratio
+                             && qFuzzyCompare(global::config.custom_title_safe_ratio, SIXTEENBYNINE_RATIO));
+  title_safe_custom->setChecked(global::config.show_title_safe_area
+                                && global::config.use_custom_title_safe_ratio
                                 && !title_safe_43->isChecked()
                                 && !title_safe_169->isChecked());
 
@@ -1442,9 +1442,9 @@ void MainWindow::toolMenu_About_To_Be_Shown()
   set_bool_action_checked(pause_at_out_point_action);
   set_bool_action_checked(seek_also_selects);
 
-  set_int_action_checked(no_autoscroll, e_config.autoscroll);
-  set_int_action_checked(page_autoscroll, e_config.autoscroll);
-  set_int_action_checked(smooth_autoscroll, e_config.autoscroll);
+  set_int_action_checked(no_autoscroll, global::config.autoscroll);
+  set_int_action_checked(page_autoscroll, global::config.autoscroll);
+  set_int_action_checked(smooth_autoscroll, global::config.autoscroll);
 }
 
 void MainWindow::duplicate()
@@ -1467,7 +1467,7 @@ void MainWindow::new_folder()
   e_undo_stack.push(new AddMediaCommand(m, PanelManager::projectViewer().get_selected_folder()));
 
   QModelIndex index = Project::model().add(m);
-  switch (e_config.project_view_type) {
+  switch (global::config.project_view_type) {
   case ProjectView::TREE:
     PanelManager::projectViewer().tree_view_->edit(PanelManager::projectViewer().sorter_->mapFromSource(index));
     break;
@@ -1615,30 +1615,30 @@ void MainWindow::enable_inout()
 
 void MainWindow::set_tsa_default()
 {
-  e_config.show_title_safe_area = true;
-  e_config.use_custom_title_safe_ratio = false;
+  global::config.show_title_safe_area = true;
+  global::config.use_custom_title_safe_ratio = false;
   PanelManager::sequenceViewer().viewer_widget->update();
 }
 
 void MainWindow::set_tsa_disable()
 {
-  e_config.show_title_safe_area = false;
+  global::config.show_title_safe_area = false;
   PanelManager::sequenceViewer().viewer_widget->update();
 }
 
 void MainWindow::set_tsa_43()
 {
-  e_config.show_title_safe_area = true;
-  e_config.use_custom_title_safe_ratio = true;
-  e_config.custom_title_safe_ratio = FULLSCREEN_RATIO;
+  global::config.show_title_safe_area = true;
+  global::config.use_custom_title_safe_ratio = true;
+  global::config.custom_title_safe_ratio = FULLSCREEN_RATIO;
   PanelManager::sequenceViewer().viewer_widget->update();
 }
 
 void MainWindow::set_tsa_169()
 {
-  e_config.show_title_safe_area = true;
-  e_config.use_custom_title_safe_ratio = true;
-  e_config.custom_title_safe_ratio = SIXTEENBYNINE_RATIO;
+  global::config.show_title_safe_area = true;
+  global::config.use_custom_title_safe_ratio = true;
+  global::config.custom_title_safe_ratio = SIXTEENBYNINE_RATIO;
   PanelManager::sequenceViewer().viewer_widget->update();
 }
 
@@ -1661,9 +1661,9 @@ void MainWindow::set_tsa_custom() {
   if (!input.isEmpty()) {
     QStringList inputList = input.split(':');
 
-    e_config.show_title_safe_area = true;
-    e_config.use_custom_title_safe_ratio = true;
-    e_config.custom_title_safe_ratio = inputList.at(0).toDouble()/inputList.at(1).toDouble();
+    global::config.show_title_safe_area = true;
+    global::config.use_custom_title_safe_ratio = true;
+    global::config.custom_title_safe_ratio = inputList.at(0).toDouble()/inputList.at(1).toDouble();
     PanelManager::sequenceViewer().viewer_widget->update();
   }
 }
@@ -1793,7 +1793,7 @@ void MainWindow::toggle_bool_action()
 void MainWindow::set_autoscroll()
 {
   auto action = dynamic_cast<QAction*>(sender());
-  e_config.autoscroll = action->data().toInt();
+  global::config.autoscroll = action->data().toInt();
 }
 
 void MainWindow::menu_click_button()
@@ -1815,6 +1815,6 @@ void MainWindow::toggle_panel_visibility()
 void MainWindow::set_timecode_view()
 {
   auto action = dynamic_cast<QAction*>(sender());
-  e_config.timecode_view = action->data().toInt();
+  global::config.timecode_view = action->data().toInt();
   PanelManager::refreshPanels(false);
 }

@@ -75,10 +75,10 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
   setWindowTitle(tr("Preferences"));
   setup_ui();
 
-  accurateSeekButton->setChecked(!e_config.fast_seeking);
-  fastSeekButton->setChecked(e_config.fast_seeking);
-  recordingComboBox->setCurrentIndex(e_config.recording_mode - 1);
-  imgSeqFormatEdit->setText(e_config.img_seq_formats);
+  accurateSeekButton->setChecked(!global::config.fast_seeking);
+  fastSeekButton->setChecked(global::config.fast_seeking);
+  recordingComboBox->setCurrentIndex(global::config.recording_mode - 1);
+  imgSeqFormatEdit->setText(global::config.img_seq_formats);
 }
 
 PreferencesDialog::~PreferencesDialog() {}
@@ -138,17 +138,17 @@ void PreferencesDialog::save() {
     return;
   }
 
-  e_config.css_path = custom_css_fn->text();
-  MainWindow::instance().load_css_from_file(e_config.css_path);
-  e_config.recording_mode = recordingComboBox->currentIndex() + 1;
-  e_config.img_seq_formats = imgSeqFormatEdit->text();
-  e_config.fast_seeking = fastSeekButton->isChecked();
-  e_config.disable_multithreading_for_images = disable_img_multithread->isChecked();
-  e_config.upcoming_queue_size = upcoming_queue_spinbox->value();
-  e_config.upcoming_queue_type = upcoming_queue_type->currentIndex();
-  e_config.previous_queue_size = previous_queue_spinbox->value();
-  e_config.previous_queue_type = previous_queue_type->currentIndex();
-  e_config.effect_textbox_lines = effect_textbox_lines_field->value();
+  global::config.css_path = custom_css_fn->text();
+  MainWindow::instance().load_css_from_file(global::config.css_path);
+  global::config.recording_mode = recordingComboBox->currentIndex() + 1;
+  global::config.img_seq_formats = imgSeqFormatEdit->text();
+  global::config.fast_seeking = fastSeekButton->isChecked();
+  global::config.disable_multithreading_for_images = disable_img_multithread->isChecked();
+  global::config.upcoming_queue_size = upcoming_queue_spinbox->value();
+  global::config.upcoming_queue_type = upcoming_queue_type->currentIndex();
+  global::config.previous_queue_size = previous_queue_spinbox->value();
+  global::config.previous_queue_type = previous_queue_type->currentIndex();
+  global::config.effect_textbox_lines = effect_textbox_lines_field->value();
 
   // save keyboard shortcuts
   for (int i=0;i<key_shortcut_fields.size();i++) {
@@ -292,7 +292,7 @@ void PreferencesDialog::setup_ui() {
   general_layout->addWidget(new QLabel(tr("Custom CSS:")), 0, 0, 1, 1);
 
   custom_css_fn = new QLineEdit(general_tab);
-  custom_css_fn->setText(e_config.css_path);
+  custom_css_fn->setText(global::config.css_path);
   general_layout->addWidget(custom_css_fn, 0, 1, 1, 1);
 
   QPushButton* custom_css_browse = new QPushButton(tr("Browse"), general_tab);
@@ -319,7 +319,7 @@ void PreferencesDialog::setup_ui() {
 
   effect_textbox_lines_field = new QSpinBox(general_tab);
   effect_textbox_lines_field->setMinimum(1);
-  effect_textbox_lines_field->setValue(e_config.effect_textbox_lines);
+  effect_textbox_lines_field->setValue(global::config.effect_textbox_lines);
   general_layout->addWidget(effect_textbox_lines_field, 3, 1, 1, 2);
 
   tabWidget->addTab(general_tab, tr("General"));
@@ -334,7 +334,7 @@ void PreferencesDialog::setup_ui() {
 
   // Playback -> Disable Multithreading on Images
   disable_img_multithread = new QCheckBox(tr("Disable Multithreading on Images"));
-  disable_img_multithread->setChecked(e_config.disable_multithreading_for_images);
+  disable_img_multithread->setChecked(global::config.disable_multithreading_for_images);
   playback_tab_layout->addWidget(disable_img_multithread);
 
   // Playback -> Seeking
@@ -355,21 +355,21 @@ void PreferencesDialog::setup_ui() {
   QGridLayout* memory_usage_layout = new QGridLayout(memory_usage_group);
   memory_usage_layout->addWidget(new QLabel(tr("Upcoming Frame Queue:")), 0, 0);
   upcoming_queue_spinbox = new QDoubleSpinBox();
-  upcoming_queue_spinbox->setValue(e_config.upcoming_queue_size);
+  upcoming_queue_spinbox->setValue(global::config.upcoming_queue_size);
   memory_usage_layout->addWidget(upcoming_queue_spinbox, 0, 1);
   upcoming_queue_type = new QComboBox();
   upcoming_queue_type->addItem(tr("frames"));
   upcoming_queue_type->addItem(tr("seconds"));
-  upcoming_queue_type->setCurrentIndex(e_config.upcoming_queue_type);
+  upcoming_queue_type->setCurrentIndex(global::config.upcoming_queue_type);
   memory_usage_layout->addWidget(upcoming_queue_type, 0, 2);
   memory_usage_layout->addWidget(new QLabel(tr("Previous Frame Queue:")), 1, 0);
   previous_queue_spinbox = new QDoubleSpinBox();
-  previous_queue_spinbox->setValue(e_config.previous_queue_size);
+  previous_queue_spinbox->setValue(global::config.previous_queue_size);
   memory_usage_layout->addWidget(previous_queue_spinbox, 1, 1);
   previous_queue_type = new QComboBox();
   previous_queue_type->addItem(tr("frames"));
   previous_queue_type->addItem(tr("seconds"));
-  previous_queue_type->setCurrentIndex(e_config.previous_queue_type);
+  previous_queue_type->setCurrentIndex(global::config.previous_queue_type);
   memory_usage_layout->addWidget(previous_queue_type, 1, 2);
   playback_tab_layout->addWidget(memory_usage_group);
 

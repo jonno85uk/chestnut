@@ -85,7 +85,7 @@ QString LabelSlider::valueToString(const double v)
   } else {
     switch (display_type) {
       case SliderType::FRAMENUMBER:
-        return frame_to_timecode(qRound(v), e_config.timecode_view, frame_rate);
+        return frame_to_timecode(qRound(v), global::config.timecode_view, frame_rate);
       case SliderType::PERCENT:
         return QString::number((v * 100), 'f', decimal_places) + "%";
       default:
@@ -217,7 +217,7 @@ void LabelSlider::mouseReleaseEvent(QMouseEvent*)
         // ignore invalid entry
         return;
       }
-      d = timecode_to_frame(set_value, e_config.timecode_view, frame_rate); // string to frame number
+      d = timecode_to_frame(set_value, global::config.timecode_view, frame_rate); // string to frame number
     } else {
       bool ok;
       d = QInputDialog::getDouble(

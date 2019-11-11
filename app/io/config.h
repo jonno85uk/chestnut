@@ -46,49 +46,51 @@ enum class ProjectView {
 
 //FIXME; oh,wow. use QSettings?
 struct Config {
-    Config();
-    bool saved_layout;
-    bool show_track_lines;
-    bool scroll_zooms;
-    bool edit_tool_selects_links;
-    bool edit_tool_also_seeks;
-    bool select_also_seeks;
-    bool paste_seeks;
-    QString img_seq_formats;
-    bool rectified_waveforms;
-    int default_transition_length;
-    int timecode_view;
-    bool show_title_safe_area;
-    bool use_custom_title_safe_ratio;
-    double custom_title_safe_ratio;
-    bool enable_drag_files_to_timeline;
-    bool autoscale_by_default;
-    int recording_mode;
-    bool enable_seek_to_import;
-    bool enable_audio_scrubbing;
-    bool drop_on_media_to_replace;
-    int autoscroll;
-    int audio_rate;
-    bool fast_seeking;
-    bool hover_focus;
-    ProjectView project_view_type;
-    bool set_name_with_marker;
-    bool show_project_toolbar;
-    bool disable_multithreading_for_images;
-    double previous_queue_size;
-    int previous_queue_type;
-    double upcoming_queue_size;
-    int upcoming_queue_type;
-    bool loop;
-    bool pause_at_out_point;
-    bool seek_also_selects;
+    bool saved_layout {false};
+    bool show_track_lines {true};
+    bool scroll_zooms {false};
+    bool edit_tool_selects_links {false};
+    bool edit_tool_also_seeks {false};
+    bool select_also_seeks {false};
+    bool paste_seeks {true};
+    QString img_seq_formats {"bmp|exr|gif|jp2|jpeg|jpg|png|psd|tga|tiff|tif"};
+    bool rectified_waveforms {false};
+    int default_transition_length {30};
+    int timecode_view {TIMECODE_DROP};
+    bool show_title_safe_area {false};
+    bool use_custom_title_safe_ratio {false};
+    double custom_title_safe_ratio {1};
+    bool enable_drag_files_to_timeline {true};
+    bool autoscale_by_default {false};
+    int recording_mode {2};
+    bool enable_seek_to_import {false};
+    bool enable_audio_scrubbing {true};
+    bool drop_on_media_to_replace {true};
+    int autoscroll {AUTOSCROLL_PAGE_SCROLL};
+    int audio_rate {48000};
+    bool fast_seeking {false};
+    bool hover_focus {false};
+    ProjectView project_view_type {ProjectView::TREE};
+    bool set_name_with_marker {true};
+    bool show_project_toolbar {false};
+    bool disable_multithreading_for_images {false};
+    double previous_queue_size {3};
+    int previous_queue_type {FRAME_QUEUE_TYPE_FRAMES};
+    double upcoming_queue_size {0.5};
+    int upcoming_queue_type {FRAME_QUEUE_TYPE_SECONDS};
+    bool loop {false};
+    bool pause_at_out_point {true};
+    bool seek_also_selects {false};
     QString css_path;
-    int effect_textbox_lines;
+    int effect_textbox_lines {3};
 
     void load(QString path);
     void save(QString path);
 };
 
-extern Config e_config;
+namespace global
+{
+  extern Config config;
+}
 
 #endif // CONFIG_H

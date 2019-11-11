@@ -72,7 +72,7 @@ Clip::Clip(SequencePtr s) :
   id_(next_id++)
 {
   media_handling_.pkt_ = av_packet_alloc();
-  timeline_info.autoscale = e_config.autoscale_by_default;
+  timeline_info.autoscale = global::config.autoscale_by_default;
   reset();
 }
 
@@ -224,15 +224,15 @@ bool Clip::openWorker()
       max_queue_size = 1;
     } else {
       max_queue_size = 0;
-      if (e_config.upcoming_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
-        max_queue_size += qCeil(e_config.upcoming_queue_size);
+      if (global::config.upcoming_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
+        max_queue_size += qCeil(global::config.upcoming_queue_size);
       } else {
-        max_queue_size += qCeil(ms->video_frame_rate * ftg->speed_ * e_config.upcoming_queue_size);
+        max_queue_size += qCeil(ms->video_frame_rate * ftg->speed_ * global::config.upcoming_queue_size);
       }
-      if (e_config.previous_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
-        max_queue_size += qCeil(e_config.previous_queue_size);
+      if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
+        max_queue_size += qCeil(global::config.previous_queue_size);
       } else {
-        max_queue_size += qCeil(ms->video_frame_rate * ftg->speed_ * e_config.previous_queue_size);
+        max_queue_size += qCeil(ms->video_frame_rate * ftg->speed_ * global::config.previous_queue_size);
       }
     }
 
@@ -252,7 +252,7 @@ bool Clip::openWorker()
     #else
          )
     #endif
-        || !e_config.disable_multithreading_for_images) {
+        || !global::config.disable_multithreading_for_images) {
       av_dict_set(&media_handling_.opts_, "threads", "auto", 0);
     }
     if (media_handling_.stream_->codecpar->codec_id == AV_CODEC_ID_H264) {
@@ -938,8 +938,8 @@ void Clip::frame(const long playhead, bool& texture_failed)
         int64_t minimum_ts = target_frame->pts;
 
         int previous_frame_count = 0;
-        if (e_config.previous_queue_type == FRAME_QUEUE_TYPE_SECONDS) {
-          minimum_ts -= qFloor(second_pts * e_config.previous_queue_size);
+        if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_SECONDS) {
+          minimum_ts -= qFloor(second_pts * global::config.previous_queue_size);
         }
 
         for (int i=0;i<queue.size();i++) {
@@ -947,7 +947,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
             next_pts = queue.at(i)->pts;
           }
           if (queue.at(i) != target_frame && ((queue.at(i)->pts > minimum_ts) == timeline_info.reverse)) {
-            if (e_config.previous_queue_type == FRAME_QUEUE_TYPE_SECONDS) {
+            if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_SECONDS) {
               av_frame_free(&queue[i]); // may be a little heavy for the main thread?
               queue.removeAt(i);
               i--;
@@ -958,8 +958,8 @@ void Clip::frame(const long playhead, bool& texture_failed)
           }
         }
 
-        if (e_config.previous_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
-          while (previous_frame_count > qCeil(e_config.previous_queue_size)) {
+        if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
+          while (previous_frame_count > qCeil(global::config.previous_queue_size)) {
             int smallest = 0;
             for (int i=1;i<queue.size();i++) {
               if (queue.at(i)->pts < queue.at(smallest)->pts) {
@@ -986,7 +986,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
               reached_end = false;
               use_cache = false;
             } else if (target_pts != last_invalid_ts && (target_pts < target_frame->pts || pts_diff > second_pts)) {
-              if (!e_config.fast_seeking) {
+              if (!global::config.fast_seeking) {
                 target_frame = nullptr;
               }
               reset = true;
