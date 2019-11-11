@@ -483,7 +483,7 @@ GLuint compose_sequence(Viewer* viewer,
           glPopMatrix();
         }
       } else {
-        if (render_audio || (e_config.enable_audio_scrubbing && audio_scrub)) {
+        if (render_audio || (global::config.enable_audio_scrubbing && audio_scrub)) {
           if (clp->timeline_info.media != nullptr && clp->timeline_info.media->type() == MediaType::SEQUENCE) {
             nests.append(clp);
             compose_sequence(viewer, ctx, seq, nests, video, render_audio, gizmos, texture_failed, rendering);

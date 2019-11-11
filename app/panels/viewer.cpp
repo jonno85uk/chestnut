@@ -288,7 +288,7 @@ void Viewer::seek(const int64_t p)
   if (main_sequence) {
     PanelManager::timeLine().scroll_to_frame(p);
     PanelManager::fxControls().scroll_to_frame(p);
-    if (e_config.seek_also_selects) {
+    if (global::config.seek_also_selects) {
       PanelManager::timeLine().select_from_playhead();
       update_fx = true;
     }
@@ -412,7 +412,7 @@ void Viewer::play()
   if (seq != nullptr) {
     if (!is_recording_cued()
         && seq->playhead_ >= get_seq_out()
-        && (e_config.loop || !main_sequence)) {
+        && (global::config.loop || !main_sequence)) {
       seek(get_seq_in());
     }
 
@@ -488,8 +488,8 @@ void Viewer::update_playhead_timecode(long p)
 void Viewer::update_end_timecode()
 {
   Q_ASSERT(endTimecode);
-  endTimecode->setText((seq == nullptr) ? frame_to_timecode(0, e_config.timecode_view, 30)
-                                        : frame_to_timecode(seq->activeLength(), e_config.timecode_view, seq->frameRate()));
+  endTimecode->setText((seq == nullptr) ? frame_to_timecode(0, global::config.timecode_view, 30)
+                                        : frame_to_timecode(seq->activeLength(), global::config.timecode_view, seq->frameRate()));
 }
 
 void Viewer::update_header_zoom()
@@ -537,7 +537,7 @@ SequencePtr Viewer::getSequence()
 
 void Viewer::setMarker() const
 {
-  bool add_marker = !e_config.set_name_with_marker;
+  bool add_marker = !global::config.set_name_with_marker;
   QString marker_name;
 
   if (!add_marker) {
@@ -879,20 +879,20 @@ void Viewer::timer_update()
   previous_playhead = seq->playhead_;
 
   seq->playhead_ = qRound(playhead_start + ((QDateTime::currentMSecsSinceEpoch()-start_msecs) * 0.001 * seq->frameRate()));
-  if (e_config.seek_also_selects) {
+  if (global::config.seek_also_selects) {
     PanelManager::timeLine().select_from_playhead();
   }
-  update_parents(e_config.seek_also_selects);
+  update_parents(global::config.seek_also_selects);
 
   const int64_t end_frame = get_seq_out();
   if (!recording
       && playing
       && (seq->playhead_ >= end_frame)
       && (previous_playhead < end_frame) ) {
-    if (!e_config.pause_at_out_point && e_config.loop) {
+    if (!global::config.pause_at_out_point && global::config.loop) {
       seek(get_seq_in());
       play();
-    } else if (e_config.pause_at_out_point || !main_sequence) {
+    } else if (global::config.pause_at_out_point || !main_sequence) {
       pause();
     }
   } else if (recording && (recording_start != recording_end) && (seq->playhead_ >= recording_end) ) {

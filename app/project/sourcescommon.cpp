@@ -243,7 +243,7 @@ void SourcesCommon::dropEvent(QWidget* parent,
            && drop_item.isValid()
            && (m->type() == MediaType::FOOTAGE)
            && !QFileInfo(paths.front()).isDir()
-           && e_config.drop_on_media_to_replace
+           && global::config.drop_on_media_to_replace
            && QMessageBox::question(
              parent,
              tr("Replace Media"),

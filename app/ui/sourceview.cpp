@@ -145,7 +145,7 @@ void SourceView::addMediaToProject(const QDropEvent& event) const
        && drop_item.isValid()
        && (mda->type() == MediaType::FOOTAGE)
        && !QFileInfo(paths.front()).isDir()
-       && e_config.drop_on_media_to_replace
+       && global::config.drop_on_media_to_replace
        && QMessageBox::question(
          nullptr,
          QObject::tr("Replace Media"),

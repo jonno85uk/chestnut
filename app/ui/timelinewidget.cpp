@@ -269,9 +269,9 @@ void TimelineWidget::tooltip_timer_timeout()
     QToolTip::showText(QCursor::pos(),
                        tr("%1\nStart: %2\nEnd: %3\nDuration: %4").arg(
                          name,
-                         frame_to_timecode(c->timeline_info.in, e_config.timecode_view, global::sequence->frameRate()),
-                         frame_to_timecode(c->timeline_info.out, e_config.timecode_view, global::sequence->frameRate()),
-                         frame_to_timecode(c->length(), e_config.timecode_view, global::sequence->frameRate())
+                         frame_to_timecode(c->timeline_info.in, global::config.timecode_view, global::sequence->frameRate()),
+                         frame_to_timecode(c->timeline_info.out, global::config.timecode_view, global::sequence->frameRate()),
+                         frame_to_timecode(c->length(), global::config.timecode_view, global::sequence->frameRate())
                          ));
   }
   tooltip_timer.stop();
@@ -379,7 +379,7 @@ void TimelineWidget::dragEnterEvent(QDragEnterEvent *event)
   }
 
   // TODO: identify how this is triggered
-  if (e_config.enable_drag_files_to_timeline && event->mimeData()->hasUrls()) {
+  if (global::config.enable_drag_files_to_timeline && event->mimeData()->hasUrls()) {
     QList<QUrl> urls = event->mimeData()->urls();
     if (!urls.isEmpty()) {
       QStringList file_list;
@@ -457,7 +457,7 @@ void TimelineWidget::wheelEvent(QWheelEvent *event) {
   if (scroll_amount != 0) {
     bool shift = (event->modifiers() & Qt::ShiftModifier);
     bool in = (scroll_amount > 0);
-    if (e_config.scroll_zooms != shift) {
+    if (global::config.scroll_zooms != shift) {
       PanelManager::timeLine().set_zoom(in);
     } else {
       QScrollBar* bar = alt ? scrollBar : PanelManager::timeLine().horizontalScrollBar;
@@ -839,7 +839,7 @@ void TimelineWidget::mousePressEvent(QMouseEvent *event)
               s.track = sel_clip->timeline_info.track_;
               global::sequence->addSelection(s);
 
-              if (e_config.select_also_seeks) {
+              if (global::config.select_also_seeks) {
                 PanelManager::sequenceViewer().seek(sel_clip->timeline_info.in);
               }
 
@@ -884,7 +884,7 @@ void TimelineWidget::mousePressEvent(QMouseEvent *event)
         if (track_locked) {
           break;
         }
-        if (e_config.edit_tool_also_seeks) {
+        if (global::config.edit_tool_also_seeks) {
           PanelManager::sequenceViewer().seek(PanelManager::timeLine().drag_frame_start);
         }
         PanelManager::timeLine().selecting = true;
@@ -1964,11 +1964,11 @@ void TimelineWidget::update_ghosts(const QPoint& mouse_pos, bool lock_frame)
 
   if (PanelManager::timeLine().importing) {
     QToolTip::showText(mapToGlobal(mouse_pos), frame_to_timecode(earliest_in_point,
-                                                                 e_config.timecode_view,
+                                                                 global::config.timecode_view,
                                                                  global::sequence->frameRate()));
   } else {
     QString tip = ((frame_diff < 0) ? "-" : "+") + frame_to_timecode(qAbs(frame_diff),
-                                                                     e_config.timecode_view,
+                                                                     global::config.timecode_view,
                                                                      global::sequence->frameRate());
     if (!PanelManager::timeLine().trim_target.expired()) {
       // find which clip is being moved
@@ -1988,7 +1988,7 @@ void TimelineWidget::update_ghosts(const QPoint& mouse_pos, bool lock_frame)
         } else {
           len += frame_diff;
         }
-        tip += frame_to_timecode(len, e_config.timecode_view, global::sequence->frameRate());
+        tip += frame_to_timecode(len, global::config.timecode_view, global::sequence->frameRate());
       }
     }
     QToolTip::showText(mapToGlobal(mouse_pos), tip);
@@ -2201,7 +2201,7 @@ void TimelineWidget::mousingOverEvent(const QPoint& pos, Timeline& time_line, co
         int mouse_pos = pos.y() + scroll;
         if ( (mouse_pos > (y_test_value-test_range)) && (mouse_pos < (y_test_value+test_range) ) ) {
           // if track lines are hidden, only resize track if a clip is already there
-          if (e_config.show_track_lines || cursor_contains_clip) {
+          if (global::config.show_track_lines || cursor_contains_clip) {
             found.track_ = true;
             track_resizing = true;
             track_target = track;
@@ -2456,7 +2456,7 @@ void TimelineWidget::mouseMoveEvent(QMouseEvent *event)
 
   if (isLiveEditing()) {
     PanelManager::timeLine().snap_to_timeline(&PanelManager::timeLine().cursor_frame,
-                                              !e_config.edit_tool_also_seeks || !PanelManager::timeLine().selecting,
+                                              !global::config.edit_tool_also_seeks || !PanelManager::timeLine().selecting,
                                               true,
                                               true);
   }
@@ -2481,7 +2481,7 @@ void TimelineWidget::mouseMoveEvent(QMouseEvent *event)
     }
 
     // select linked clips too
-    if (e_config.edit_tool_selects_links) {
+    if (global::config.edit_tool_selects_links) {
       for (int j=0;j<global::sequence->clips().size();j++) {
         ClipPtr c = global::sequence->clips().at(j);
         if (c == nullptr) {
@@ -2523,7 +2523,7 @@ void TimelineWidget::mouseMoveEvent(QMouseEvent *event)
       }//for
     }
 
-    if (e_config.edit_tool_also_seeks) {
+    if (global::config.edit_tool_also_seeks) {
       PanelManager::sequenceViewer().seek(qMin(PanelManager::timeLine().drag_frame_start, PanelManager::timeLine().cursor_frame));
     } else {
       PanelManager::timeLine().repaint_timeline();
@@ -2724,7 +2724,7 @@ void draw_waveform(ClipPtr& clip, const FootageStreamPtr& ms, const long media_l
     }
 
     for (auto j=0; j<ms->audio_channels; ++j) {
-      auto mid = (e_config.rectified_waveforms) ? clip_rect.top()+channel_height*(j+1) : clip_rect.top()+channel_height*j+(channel_height/2);
+      auto mid = (global::config.rectified_waveforms) ? clip_rect.top()+channel_height*(j+1) : clip_rect.top()+channel_height*j+(channel_height/2);
       auto offset = waveform_index+(j*2);
       Q_ASSERT(offset >= 0);
 
@@ -2732,7 +2732,7 @@ void draw_waveform(ClipPtr& clip, const FootageStreamPtr& ms, const long media_l
         const auto min = static_cast<double>(ms->audio_preview.at(offset)) / 128.0 * (channel_height/2);
         const auto max = static_cast<double>(ms->audio_preview.at(offset+1)) / 128.0 * (channel_height/2);
 
-        if (e_config.rectified_waveforms)  {
+        if (global::config.rectified_waveforms)  {
           p.drawLine(clip_rect.left()+i, mid, clip_rect.left()+i, mid - (max - min));
         } else {
           p.drawLine(clip_rect.left()+i, mid+min, clip_rect.left()+i, mid+max);
@@ -3297,7 +3297,7 @@ void TimelineWidget::paintEvent(QPaintEvent*)
   }
 
   // Draw track lines
-  if (e_config.show_track_lines) {
+  if (global::config.show_track_lines) {
     drawTrackLines(audio_track_limit, video_track_limit, painter);
   }
 
@@ -3378,7 +3378,7 @@ int TimelineWidget::getTrackFromScreenPoint(int y)
   int counter = ((!bottom_align && y > 0) || (bottom_align && y < 0)) ? 0 : -1;
   int track_height = PanelManager::timeLine().calculate_track_height(counter, -1);
   while (qAbs(y) > height_measure + track_height) {
-    if (e_config.show_track_lines && counter != -1) {
+    if (global::config.show_track_lines && counter != -1) {
       y--;
     }
     height_measure += track_height;
@@ -3404,7 +3404,7 @@ int TimelineWidget::getScreenPointFromTrack(const int track) const
     if (!bottom_align) {
       counter++;
     }
-    if (e_config.show_track_lines && (counter != -1)) {
+    if (global::config.show_track_lines && (counter != -1)) {
       y++;
     }
   }

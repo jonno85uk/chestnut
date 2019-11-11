@@ -110,7 +110,7 @@ Project::Project(QWidget *parent) :
 
   // optional toolbar
   toolbar_widget_ = new QWidget();
-  toolbar_widget_->setVisible(e_config.show_project_toolbar);
+  toolbar_widget_->setVisible(global::config.show_project_toolbar);
   QHBoxLayout* toolbar = new QHBoxLayout();
   toolbar->setMargin(0);
   toolbar->setSpacing(0);
@@ -649,7 +649,7 @@ void Project::process_file_list(QStringList& files, bool recursive, MediaPtr rep
 
   QVector<QString> image_sequence_urls;
   QVector<bool> image_sequence_importassequence;
-  QStringList image_sequence_formats = e_config.img_seq_formats.split("|");
+  QStringList image_sequence_formats = global::config.img_seq_formats.split("|");
 
   if (!recursive) {
     last_imported_media.clear();
@@ -835,7 +835,7 @@ bool Project::reveal_media(MediaPtr media, QModelIndex parent)
 
       QModelIndex hierarchy = sorted_index.parent();
 
-      if (e_config.project_view_type == ProjectView::TREE) {
+      if (global::config.project_view_type == ProjectView::TREE) {
         while (hierarchy.isValid()) {
           tree_view_->setExpanded(hierarchy, true);
           hierarchy = hierarchy.parent();
@@ -843,7 +843,7 @@ bool Project::reveal_media(MediaPtr media, QModelIndex parent)
 
         // select item
         tree_view_->selectionModel()->select(sorted_index, QItemSelectionModel::Select);
-      } else if (e_config.project_view_type == ProjectView::ICON) {
+      } else if (global::config.project_view_type == ProjectView::ICON) {
         icon_view_->setRootIndex(hierarchy);
         icon_view_->selectionModel()->select(sorted_index, QItemSelectionModel::Select);
         set_up_dir_enabled();
@@ -1072,10 +1072,10 @@ void Project::save_project(const bool autorecovery)
 
 void Project::update_view_type()
 {
-  tree_view_->setVisible(e_config.project_view_type == ProjectView::TREE);
-  icon_view_container->setVisible(e_config.project_view_type == ProjectView::ICON);
+  tree_view_->setVisible(global::config.project_view_type == ProjectView::TREE);
+  icon_view_container->setVisible(global::config.project_view_type == ProjectView::ICON);
 
-  switch (e_config.project_view_type) {
+  switch (global::config.project_view_type) {
     case ProjectView::TREE:
       sources_common_->setCurrentView(tree_view_);
       break;
@@ -1083,18 +1083,18 @@ void Project::update_view_type()
       sources_common_->setCurrentView(icon_view_);
       break;
     default:
-      qWarning() << "Unhandled Project View type" << static_cast<int>(e_config.project_view_type);
+      qWarning() << "Unhandled Project View type" << static_cast<int>(global::config.project_view_type);
       break;
   }//switch
 }
 
 void Project::set_icon_view() {
-  e_config.project_view_type = ProjectView::ICON;
+  global::config.project_view_type = ProjectView::ICON;
   update_view_type();
 }
 
 void Project::set_tree_view() {
-  e_config.project_view_type = ProjectView::TREE;
+  global::config.project_view_type = ProjectView::TREE;
   update_view_type();
 }
 
@@ -1216,7 +1216,7 @@ QVector<MediaPtr> Project::list_all_project_sequences() {
 
 QModelIndexList Project::get_current_selected()
 {
-  if (e_config.project_view_type == ProjectView::TREE) {
+  if (global::config.project_view_type == ProjectView::TREE) {
     return PanelManager::projectViewer().tree_view_->selectionModel()->selectedRows();
   }
   return PanelManager::projectViewer().icon_view_->selectionModel()->selectedIndexes();

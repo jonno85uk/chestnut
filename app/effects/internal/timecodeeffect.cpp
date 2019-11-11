@@ -91,13 +91,13 @@ void TimecodeEffect::setupUi()
 void TimecodeEffect::redraw(double timecode) {
   if (tc_select->get_combo_data(timecode).toBool()){
     display_timecode = prepend_text->get_string_value(timecode) + frame_to_timecode(global::sequence->playhead_,
-                                                                                    e_config.timecode_view,
+                                                                                    global::config.timecode_view,
                                                                                     global::sequence->frameRate());
   }
   else {
     double media_rate = parent_clip->mediaFrameRate();
     display_timecode = prepend_text->get_string_value(timecode) + frame_to_timecode(timecode * media_rate,
-                                                                                    e_config.timecode_view,
+                                                                                    global::config.timecode_view,
                                                                                     media_rate);}
   superimpose_.img_.fill(Qt::transparent);
 

@@ -443,7 +443,7 @@ void Timeline::addClipsFromGhosts(ComboAction* ca, const SequencePtr& seq)
       c->effects.append(create_effect(c, get_internal_meta(EFFECT_INTERNAL_PAN, EFFECT_TYPE_EFFECT)));
     }
   }
-  if (e_config.enable_seek_to_import) {
+  if (global::config.enable_seek_to_import) {
     PanelManager::sequenceViewer().seek(earliest_point);
   }
   PanelManager::timeLine().ghosts.clear();
@@ -561,13 +561,13 @@ void Timeline::repaint_timeline()
       && PanelManager::sequenceViewer().playing
       && !zoom_just_changed) {
     // auto scroll
-    if (e_config.autoscroll == AUTOSCROLL_PAGE_SCROLL) {
+    if (global::config.autoscroll == AUTOSCROLL_PAGE_SCROLL) {
       const int playhead_x = PanelManager::timeLine().getTimelineScreenPointFromFrame(sequence_->playhead_);
       if (playhead_x < 0 || playhead_x > (editAreas->width() - videoScrollbar->width())) {
         horizontalScrollBar->setValue(getScreenPointFromFrame(zoom, sequence_->playhead_));
         draw = false;
       }
-    } else if (e_config.autoscroll == AUTOSCROLL_SMOOTH_SCROLL) {
+    } else if (global::config.autoscroll == AUTOSCROLL_SMOOTH_SCROLL) {
       if (center_scroll_to_playhead(horizontalScrollBar, zoom, sequence_->playhead_)) {
         draw = false;
       }
@@ -1033,7 +1033,7 @@ void Timeline::pasteClip(const QVector<project::SequenceItemPtr>& items, const b
 
   PanelManager::refreshPanels(true);
 
-  if (e_config.paste_seeks) {
+  if (global::config.paste_seeks) {
     PanelManager::sequenceViewer().seek(paste_end);
   }
 }
@@ -1415,7 +1415,7 @@ bool Timeline::snap_to_timeline(long* l, bool use_playhead, bool use_markers, bo
 void Timeline::setMarker() const
 {
   Q_ASSERT(sequence_ != nullptr);
-  bool add_marker = !e_config.set_name_with_marker;
+  bool add_marker = !global::config.set_name_with_marker;
   QString marker_name;
 
   if (!add_marker) {

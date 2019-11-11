@@ -470,11 +470,11 @@ void ViewerWidget::draw_title_safe_area() {
   double viewportAr = static_cast<double>(width()) / static_cast<double>(height());
   double halfAr = viewportAr*0.5;
 
-  if (e_config.use_custom_title_safe_ratio && e_config.custom_title_safe_ratio > 0) {
-    if (e_config.custom_title_safe_ratio > viewportAr) {
-      halfHeight = (e_config.custom_title_safe_ratio/viewportAr)*0.5;
+  if (global::config.use_custom_title_safe_ratio && global::config.custom_title_safe_ratio > 0) {
+    if (global::config.custom_title_safe_ratio > viewportAr) {
+      halfHeight = (global::config.custom_title_safe_ratio/viewportAr)*0.5;
     } else {
-      halfWidth = (viewportAr/e_config.custom_title_safe_ratio)*0.5;
+      halfWidth = (viewportAr/global::config.custom_title_safe_ratio)*0.5;
     }
   }
 
@@ -658,7 +658,7 @@ void ViewerWidget::paintGL()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // draw title/action safe area
-    if (e_config.show_title_safe_area) {
+    if (global::config.show_title_safe_area) {
       draw_title_safe_area();
     }
 

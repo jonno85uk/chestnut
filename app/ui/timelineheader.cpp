@@ -396,7 +396,7 @@ void TimelineHeader::paintEvent(QPaintEvent*)
     // draw text
     bool draw_text = false;
     if (text_enabled && (lineX-textWidth > lastTextBoundary) ) {
-      timecode = frame_to_timecode(frame + in_visible, e_config.timecode_view, sqn->frameRate());
+      timecode = frame_to_timecode(frame + in_visible, global::config.timecode_view, sqn->frameRate());
       fullTextWidth = fm.horizontalAdvance(timecode);
       textWidth = fullTextWidth >> 1;
       text_x = lineX - textWidth;
