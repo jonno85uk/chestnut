@@ -189,7 +189,8 @@ void PreviewGenerator::finalize_media()
   }
 }
 
-void thumb_data_cleanup(void *info) {
+void thumb_data_cleanup(void *info)
+{
   delete [] static_cast<uint8_t*>(info);
 }
 
@@ -197,9 +198,10 @@ void PreviewGenerator::generate_waveform()
 {
   gsl::span<AVCodecContext*> codec_ctx(new AVCodecContext* [fmt_ctx->nb_streams], fmt_ctx->nb_streams);
   gsl::span<AVStream*> streams(fmt_ctx->streams, fmt_ctx->nb_streams);
-  for (auto i=0; i<streams.size(); ++i) {
+  for (size_t i = 0; i < streams.size(); ++i) {
     codec_ctx[i] = nullptr;
-    if (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO || streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+    if ( (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+         || (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) ) {
       AVCodec* const codec = avcodec_find_decoder(streams[i]->codecpar->codec_id);
       if (codec == nullptr) {
         continue;
@@ -207,11 +209,11 @@ void PreviewGenerator::generate_waveform()
       codec_ctx[i] = avcodec_alloc_context3(codec); //FIXME: memory leak
       avcodec_parameters_to_context(codec_ctx[i], streams[i]->codecpar);
       avcodec_open2(codec_ctx[i], codec, nullptr);
-      if (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO && codec_ctx[i]->channel_layout == 0) {
+      if ( (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) && (codec_ctx[i]->channel_layout == 0) ) {
         codec_ctx[i]->channel_layout = av_get_default_channel_layout(streams[i]->codecpar->channels);
       }
     }
-  }
+  }//for
 
   AVPacket* packet = av_packet_alloc();
   bool done = true;

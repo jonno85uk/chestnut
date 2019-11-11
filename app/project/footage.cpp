@@ -62,7 +62,12 @@ Footage::Footage(QString url, const std::shared_ptr<Media>& parent)
   : url_(std::move(url)),
     parent_mda_(parent)
 {
-  media_source_ = media_handling::createSource(url_.toStdString());
+  try {
+    media_source_ = media_handling::createSource(url_.toStdString());
+  }  catch (const std::exception& ex) {
+    qWarning() << "Unable to create media_handling source";
+    throw;
+  }
   parseStreams();
 }
 
@@ -203,8 +208,11 @@ bool Footage::load(QXmlStreamReader& stream)
       setName(stream.readElementText());
     } else if (elem_name == "url") {
       url_ = stream.readElementText();
-      media_source_ = media_handling::createSource(url_.toStdString());
-      Q_ASSERT(media_source_);
+      try {
+        media_source_ = media_handling::createSource(url_.toStdString());
+      }  catch (const std::runtime_error& ex) {
+        qWarning() << "Source file failed to load:" << ex.what();
+      }
     } else if (elem_name == "duration") {
       length_ = stream.readElementText().toLong();
     } else if (elem_name == "marker") {
@@ -221,18 +229,22 @@ bool Footage::load(QXmlStreamReader& stream)
     }
   }
 
-  for (int i = 0; i < audio_tracks.size(); ++i) {
-    auto strm(media_source_->audioStream(i));
-    Q_ASSERT(strm);
-    Q_ASSERT(audio_tracks.at(i));
-    audio_tracks.at(i)->setStreamInfo(strm);
-  }
+  if (media_source_) {
+    for (int i = 0; i < audio_tracks.size(); ++i) {
+      auto strm(media_source_->audioStream(i));
+      Q_ASSERT(strm);
+      Q_ASSERT(audio_tracks.at(i));
+      audio_tracks.at(i)->setStreamInfo(strm);
+    }
 
-  for (int i = 0; i < video_tracks.size(); ++i) {
-    auto strm(media_source_->visualStream(i));
-    Q_ASSERT(strm);
-    Q_ASSERT(video_tracks.at(i));
-    video_tracks.at(i)->setStreamInfo(strm);
+    for (int i = 0; i < video_tracks.size(); ++i) {
+      auto strm(media_source_->visualStream(i));
+      Q_ASSERT(strm);
+      Q_ASSERT(video_tracks.at(i));
+      video_tracks.at(i)->setStreamInfo(strm);
+    }
+  } else {
+    qWarning() << "Unable to set info for footage streams. Missing source file url =" << url_;
   }
 
   //TODO: check what this does
@@ -312,6 +324,11 @@ constexpr long lengthToFrames(const int64_t length, const double frame_rate, con
                                          * (frame_rate / speed) ));
   }
   return 0;
+}
+
+bool Footage::isMissing() const noexcept
+{
+  return media_source_ == nullptr;
 }
 
 long Footage::totalLengthInFrames(const double frame_rate) const noexcept

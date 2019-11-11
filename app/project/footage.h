@@ -55,13 +55,19 @@ class Footage : public std::enable_shared_from_this<Footage>, public project::Pr
     long out{0};
     bool using_inout{false};
 
-    std::atomic_bool ready_; /*{false};*/
-    std::atomic_bool has_preview_; /*{false};*/
+    std::atomic_bool ready_;
+    std::atomic_bool has_preview_;
 
     Footage() = delete;
     explicit Footage(const std::shared_ptr<Media>& parent);
     Footage(QString url, const std::shared_ptr<Media>& parent);
     Footage(const Footage& cpy);
+
+    /**
+     * @brief Identify if the Footage is missing its source file
+     * @return true==file is not present/available
+     */
+    bool isMissing() const noexcept;
 
     /**
      * @brief Obtain the length of the footage, ignoring any in/out points
