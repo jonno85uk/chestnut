@@ -65,7 +65,6 @@ private:
     AVFormatContext* fmt_ctx;
     MediaPtr media;
     FootageWPtr footage;
-    bool retrieve_duration;
     bool contains_still_image;
     bool replace;
     bool cancelled;

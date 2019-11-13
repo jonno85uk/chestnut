@@ -56,7 +56,8 @@ constexpr auto PREVIEW_HEIGHT = 480;
 constexpr auto PREVIEW_CHANNELS = 4;
 constexpr auto WAVEFORM_RESOLUTION = 64.0;
 constexpr auto PREVIEW_DIR = "/previews";
-constexpr auto THUMB_PREVIEW_FORMAT = "png";
+constexpr auto THUMB_PREVIEW_FORMAT = "jpg";
+constexpr auto THUMB_PREVIEW_QUALITY = 80;
 
 namespace {
   QSemaphore sem(3); // only 5 preview generators can run at one time
@@ -485,7 +486,7 @@ void PreviewGenerator::run()
             Q_ASSERT(ms);
             const auto thumbPath = get_thumbnail_path(hash, ms);
             auto tmp = ms->video_preview;
-            if (!tmp.save(thumbPath, THUMB_PREVIEW_FORMAT)) {
+            if (!tmp.save(thumbPath, THUMB_PREVIEW_FORMAT, THUMB_PREVIEW_QUALITY)) {
               qWarning() << "Video Preview did not save." << thumbPath;
             }
           }
