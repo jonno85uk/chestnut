@@ -81,7 +81,7 @@ constexpr int MIN_WIDTH = 320;
 
 constexpr auto VIDEO_FMT_FILTER = "*.avi *.m4v *.mkv *.mov *.mp4 *.mts *.mxf *.ogv *.webm *.wmv";
 constexpr auto AUDIO_FMT_FILTER = "*.aac *.aif *.alac *.flac *.m4a *.mp3 *.ogg *.wav *.wma";
-constexpr auto IMAGE_FMT_FILTER = "*.gif *.jpeg *.jpg *.png *.tiff *.webp";
+constexpr auto IMAGE_FMT_FILTER = "*.dpx *.exr *.gif *.jp2 *.jpeg *.jpg *.png *tga *.tiff *.webp";
 constexpr auto TMP_SAVE_FILENAME = "tmpsave.nut";
 
 #ifdef QT_NO_DEBUG
@@ -782,7 +782,6 @@ void Project::process_file_list(QStringList& files, bool recursive, MediaPtr rep
             ca->append(new AddMediaCommand(item, parent));
           } else {
             parent->appendChild(item);
-            //                        Project::model().appendChild(parent, item);
           }
         }
 
