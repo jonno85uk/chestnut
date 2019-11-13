@@ -57,6 +57,7 @@ private:
      * @brief retrieve pre-existing (file-system) previews
      * @param hash used to generate file_path
      * @return  true==already exists and loaded in FootageStream of Media (groan)
+     * @return
      */
     bool retrieve_preview(const QString &hash);
     void generate_waveform();

@@ -38,6 +38,7 @@ FootageStream::FootageStream(MediaStreamPtr stream_info)
 
 void FootageStream::make_square_thumb()
 {
+  qDebug() << "Making square thumbnail";
   // generate square version for QListView?
   const auto max_dimension = qMax(video_preview.width(), video_preview.height());
   QPixmap pixmap(max_dimension, max_dimension);
