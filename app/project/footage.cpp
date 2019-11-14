@@ -65,7 +65,7 @@ Footage::Footage(QString url, const std::shared_ptr<Media>& parent)
   try {
     media_source_ = media_handling::createSource(url_.toStdString());
   }  catch (const std::exception& ex) {
-    qWarning() << "Unable to create media_handling source";
+    qWarning() << "Unable to create media_handling source, msg=" << ex.what();
     throw;
   }
   parseStreams();
@@ -221,7 +221,7 @@ bool Footage::load(QXmlStreamReader& stream)
       markers_.append(mrkr);
     } else if (elem_name == "speed") {
       if (speed_ = stream.readElementText().toDouble(&okay); !okay) {
-
+        throw std::runtime_error("Failed to extract speed element");
       }
     } else {
       qWarning() << "Unhandled element" << elem_name;

@@ -81,7 +81,7 @@ constexpr int MIN_WIDTH = 320;
 
 constexpr auto VIDEO_FMT_FILTER = "*.avi *.m4v *.mkv *.mov *.mp4 *.mts *.mxf *.ogv *.webm *.wmv";
 constexpr auto AUDIO_FMT_FILTER = "*.aac *.aif *.alac *.flac *.m4a *.mp3 *.ogg *.wav *.wma";
-constexpr auto IMAGE_FMT_FILTER = "*.dpx *.exr *.gif *.jp2 *.jpeg *.jpg *.png *tga *.tiff *.webp";
+constexpr auto IMAGE_FMT_FILTER = "*.bmp *.dpx *.exr *.jp2 *.jpeg *.jpg *.png *.tga *.tif *.tiff *.webp";
 constexpr auto TMP_SAVE_FILENAME = "tmpsave.nut";
 
 #ifdef QT_NO_DEBUG
