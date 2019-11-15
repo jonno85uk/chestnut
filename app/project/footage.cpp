@@ -19,6 +19,7 @@
 #include "footage.h"
 
 #include <mediahandling/mediahandling.h>
+#include <regex>
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -49,7 +50,8 @@ Footage::Footage(const Footage& cpy)
     url_(cpy.url_),
     parent_mda_(/*cpy.parent_mda_*/), // this parent is of the wrong media object
     video_tracks(cpy.video_tracks),
-    audio_tracks(cpy.audio_tracks)
+    audio_tracks(cpy.audio_tracks),
+    import_as_sequence_(cpy.import_as_sequence_)
 {
 
 }
@@ -58,12 +60,17 @@ Footage::Footage(const std::shared_ptr<Media>& parent) : parent_mda_(parent)
 {
 }
 
-Footage::Footage(QString url, const std::shared_ptr<Media>& parent)
+Footage::Footage(QString url, const std::shared_ptr<Media>& parent, const bool import_as_sequence)
   : url_(std::move(url)),
-    parent_mda_(parent)
+    parent_mda_(parent),
+    import_as_sequence_(import_as_sequence)
 {
   try {
+    // TODO: not keen on this. Revisit.
+    const bool prev_scheme = media_handling::autoDetectImageSequences();
+    media_handling::autoDetectImageSequences(import_as_sequence);
     media_source_ = media_handling::createSource(url_.toStdString());
+    media_handling::autoDetectImageSequences(prev_scheme);
   }  catch (const std::exception& ex) {
     qWarning() << "Unable to create media_handling source, msg=" << ex.what();
     throw;
@@ -94,6 +101,23 @@ bool Footage::isImage() const
 }
 
 
+std::optional<media_handling::StreamType> Footage::visualType() const
+{
+  Q_ASSERT(media_source_);
+  if (!media_source_->visualStreams().empty()) {
+    if (auto v_s = media_source_->visualStream(0)) {
+      return v_s->type();
+    }
+  }
+  return {};
+}
+
+bool Footage::hasAudio() const
+{
+  Q_ASSERT(media_source_);
+  return !media_source_->audioStreams().empty();
+}
+
 void Footage::setParent(std::shared_ptr<Media> mda)
 {
   parent_mda_ = mda;
@@ -105,6 +129,13 @@ void Footage::setParent(std::shared_ptr<Media> mda)
  */
 QString Footage::location() const
 {
+  if (import_as_sequence_) {
+    if (auto sqn_url = media_handling::utils::generateSequencePattern(url_.toStdString())) {
+      return QString::fromStdString(sqn_url.value());
+    } else {
+      qWarning() << "No sequence pattern found, fileName =" << url_;
+    }
+  }
   return url_;
 }
 

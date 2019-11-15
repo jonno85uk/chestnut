@@ -34,6 +34,13 @@
 #include <QMenu>
 #include <memory>
 #include <QStandardPaths>
+#include <mediahandling/mediahandling.h>
+#include <regex>
+
+extern "C" {
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
+}
 
 #include "project/footage.h"
 #include "panels/panelmanager.h"
@@ -60,10 +67,6 @@
 #include "debug.h"
 
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-}
 
 using panels::PanelManager;
 
@@ -647,33 +650,32 @@ void Project::process_file_list(QStringList& files, bool recursive, MediaPtr rep
 {
   bool imported = false;
 
-  QVector<QString> image_sequence_urls;
-  QVector<bool> image_sequence_importassequence;
-  QStringList image_sequence_formats = global::config.img_seq_formats.split("|");
-
   if (!recursive) {
     last_imported_media.clear();
   }
 
-  bool create_undo_action = (!recursive && replace == nullptr);
+  const bool create_undo_action = (!recursive && replace == nullptr);
   ComboAction* ca = nullptr;
   if (create_undo_action) {
     ca = new ComboAction();
   }
 
-  for (QString fileName: files) {
+  std::map<std::string, bool> image_sequence_urls;
+
+  for (auto& fileName: files) {
     if (QFileInfo(fileName).isDir()) {
       QString folder_name = get_file_name_from_path(fileName);
       MediaPtr folder = newFolder(folder_name);
+      Q_ASSERT(folder);
 
       QDir directory(fileName);
       directory.setFilter(QDir::NoDotAndDotDot | QDir::AllEntries);
 
-      QFileInfoList subdir_files = directory.entryInfoList();
+      const QFileInfoList subdir_files(directory.entryInfoList());
       QStringList subdir_filenames;
 
-      for (int j=0; j<subdir_files.size(); j++) {
-        subdir_filenames.append(subdir_files.at(j).filePath());
+      for (const auto& sub_file : subdir_files) {
+        subdir_filenames.append(sub_file.filePath());
       }
 
       process_file_list(subdir_filenames, true, nullptr, folder);
@@ -686,109 +688,62 @@ void Project::process_file_list(QStringList& files, bool recursive, MediaPtr rep
 
       imported = true;
     } else if (!fileName.isEmpty()) {
-      bool skip = false;
-      /* Heuristic to determine whether file is part of an image sequence */
-      // check file extension (assume it's not a
-      int lastcharindex = fileName.lastIndexOf(".");
-      bool found = true;
-      if ( (lastcharindex != -1) && (lastcharindex > fileName.lastIndexOf('/')) ) {
-        // img sequence check
-        const QString ext(get_file_ext_from_path(fileName));
-        found = image_sequence_formats.contains(ext);
+      auto import_as_sequence = false;
+
+      if (media_handling::utils::pathIsInSequence(fileName.toStdString())) {
+        const std::regex pattern(media_handling::SEQUENCE_MATCHING_PATTERN, std::regex_constants::icase);
+        std::smatch match;
+        const auto fname(fileName.toStdString()); // regex_search won't take rvalues
+        if (!std::regex_search(fname, match, pattern)) {
+          throw std::runtime_error("Failing a regex search that only just worked");
+        }
+
+        if (image_sequence_urls.count(match.str(1)) < 1) {
+          // Not seen yet
+          import_as_sequence = QMessageBox::question(this,
+                                    tr("Image sequence detected"),
+                                    tr("The file '%1' appears to be part of an image sequence. "
+                                       "Would you like to import it as such?").arg(fileName),
+                                    QMessageBox::Yes | QMessageBox::No,
+                                    QMessageBox::Yes) == QMessageBox::Yes;
+          image_sequence_urls[match.str(1)] = import_as_sequence;
+        } else if (image_sequence_urls.at(match.str(1))) {
+          // This img_sequence part-name has been selected to import as sequence already
+          continue;
+        }
+      }
+
+      MediaPtr item;
+      FootagePtr ftg;
+
+      if (replace != nullptr) {
+        item = replace;
+        ftg = replace->object<Footage>();
+        ftg->reset();
       } else {
-        lastcharindex = fileName.length();
+        item = std::make_shared<Media>(parent);
+        ftg = std::make_shared<Footage>(fileName, item, import_as_sequence);
       }
 
-      if (lastcharindex == 0) {
-        lastcharindex++;
-      }
+      ftg->using_inout = false;
+      ftg->setName(get_file_name_from_path(fileName));
 
-      if (found && fileName[lastcharindex-1].isDigit()) {
-        bool is_img_sequence = false;
+      item->setFootage(ftg);
 
-        // how many digits are in the filename?
-        int digit_count = 0;
-        int digit_test = lastcharindex-1;
-        while (fileName[digit_test].isDigit()) {
-          digit_count++;
-          digit_test--;
-        }
+      last_imported_media.append(item);
 
-        // retrieve number from filename
-        digit_test++;
-        int file_number = fileName.mid(digit_test, digit_count).toInt();
-
-        // Check if there are files with the same filename but just different numbers
-        if (QFileInfo::exists(QString(fileName.left(digit_test) + QString("%1").arg(file_number-1, digit_count, 10, QChar('0')) + fileName.mid(lastcharindex)))
-            || QFileInfo::exists(QString(fileName.left(digit_test) + QString("%1").arg(file_number+1, digit_count, 10, QChar('0')) + fileName.mid(lastcharindex)))) {
-          is_img_sequence = true;
-        }
-
-        if (is_img_sequence) {
-          // get the URL that we would pass to FFmpeg to force it to read the image as a sequence
-          QString new_filename = fileName.left(digit_test) + "%" + QString("%1").arg(digit_count, 2, 10, QChar('0')) + "d" + fileName.mid(lastcharindex);
-
-          // add image sequence url to a vector in case the user imported several files that
-          // we're interpreting as a possible sequence
-          found = false;
-          for (int i=0;i<image_sequence_urls.size();i++) {
-            if (image_sequence_urls.at(i) == new_filename) {
-              // either SKIP if we're importing as a sequence, or leave it if we aren't
-              if (image_sequence_importassequence.at(i)) {
-                skip = true;
-              }
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            image_sequence_urls.append(new_filename);
-            if (QMessageBox::question(this,
-                                      tr("Image sequence detected"),
-                                      tr("The file '%1' appears to be part of an image sequence. Would you like to import it as such?").arg(fileName),
-                                      QMessageBox::Yes | QMessageBox::No,
-                                      QMessageBox::Yes) == QMessageBox::Yes) {
-              fileName = new_filename;
-              image_sequence_importassequence.append(true);
-            } else {
-              image_sequence_importassequence.append(false);
-            }
-          }
-        }
-      }
-
-      if (!skip) {
-        MediaPtr item;
-        FootagePtr ftg;
-
-        if (replace != nullptr) {
-          item = replace;
-          ftg = replace->object<Footage>();
-          ftg->reset();
+      if (replace == nullptr) {
+        if (create_undo_action) {
+          ca->append(new AddMediaCommand(item, parent));
         } else {
-          item = std::make_shared<Media>(parent);
-          ftg = std::make_shared<Footage>(fileName, item);
+          parent->appendChild(item);
         }
-
-        ftg->using_inout = false;
-        ftg->setName(get_file_name_from_path(fileName));
-
-        item->setFootage(ftg);
-
-        last_imported_media.append(item);
-
-        if (replace == nullptr) {
-          if (create_undo_action) {
-            ca->append(new AddMediaCommand(item, parent));
-          } else {
-            parent->appendChild(item);
-          }
-        }
-
-        imported = true;
       }
+
+      imported = true;
     }
   }
+
   if (create_undo_action) {
     if (imported) {
       e_undo_stack.push(ca);

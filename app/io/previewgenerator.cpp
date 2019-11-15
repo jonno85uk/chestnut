@@ -431,97 +431,101 @@ void PreviewGenerator::run()
 {
   Q_ASSERT(media != nullptr);
 
-  if (auto ftg = footage.lock()) {
-    auto source = media_handling::createSource(ftg->location().toStdString());
-    if (!source->visualStreams().empty()) {
-      if (auto v_s = source->visualStream(0); v_s->type() == media_handling::StreamType::IMAGE) {
-        generateImagePreview(ftg);
-      } else {
-        generateVideoPreview();
-      }
-    } else if (!source->audioStreams().empty()) {
-      generateAudioPreview();
+  auto ftg = footage.lock();
+  if (ftg == nullptr) {
+    qCritical() << "Footage instance is NULL";
+    return;
+  }
+
+  if (const auto v_t = ftg->visualType()) {
+    if (v_t == media_handling::StreamType::IMAGE) {
+      generateImagePreview(ftg);
+    } else if (v_t == media_handling::StreamType::VIDEO) {
+      generateVideoPreview();
     } else {
-      qCritical() << "Source has no supported streams, fileName=" << ftg->location();
+      qWarning() << "Unhandled visual type, fileName =" << ftg->location();
     }
+  } else if (ftg->hasAudio()) {
+    generateAudioPreview();
+  } else {
+    qCritical() << "Source has no supported streams, fileName =" << ftg->location();
+  }
 
-    // video/audio waveform generation
-    const auto filename = ftg->location().toUtf8().data();
+  // video/audio waveform generation
+  const auto filename(ftg->location().toUtf8().data());
 
-    QString errorStr;
-    bool error = false;
-    int errCode = avformat_open_input(&fmt_ctx, filename, nullptr, nullptr);
-    if(errCode != 0) {
+  QString errorStr;
+  bool error = false;
+  int errCode = avformat_open_input(&fmt_ctx, filename, nullptr, nullptr);
+  if(errCode != 0) {
+    char err[1024];
+    av_strerror(errCode, err, 1024);
+    errorStr = tr("Could not open file - %1").arg(err);
+    error = true;
+  } else {
+    errCode = avformat_find_stream_info(fmt_ctx, nullptr);
+    if (errCode < 0) {
       char err[1024];
       av_strerror(errCode, err, 1024);
-      errorStr = tr("Could not open file - %1").arg(err);
+      errorStr = tr("Could not find stream information - %1").arg(err);
       error = true;
     } else {
-      errCode = avformat_find_stream_info(fmt_ctx, nullptr);
-      if (errCode < 0) {
-        char err[1024];
-        av_strerror(errCode, err, 1024);
-        errorStr = tr("Could not find stream information - %1").arg(err);
-        error = true;
-      } else {
-        parse_media();
+      parse_media();
 
-        // see if we already have data for this
-        const QFileInfo file_info(ftg->location());
-        const QString cache_file(file_info.fileName()
-                                 + QString::number(file_info.size())
-                                 + QString::number(file_info.lastModified().toMSecsSinceEpoch()));
-        const QString hash(QCryptographicHash::hash(cache_file.toUtf8(), QCryptographicHash::Md5).toHex());
-        qDebug() << "Preview hash =" << hash;
-        if (!retrieve_preview(hash)) {
-          av_dump_format(fmt_ctx, 0, filename, 0);
-          qDebug() << "No preview found";
-          sem.acquire();
+      // see if we already have data for this
+      const QFileInfo file_info(ftg->location());
+      const QString cache_file(file_info.fileName()
+                               + QString::number(file_info.size())
+                               + QString::number(file_info.lastModified().toMSecsSinceEpoch()));
+      const QString hash(QCryptographicHash::hash(cache_file.toUtf8(), QCryptographicHash::Md5).toHex());
+      qDebug() << "Preview hash =" << hash;
+      if (!retrieve_preview(hash)) {
+        av_dump_format(fmt_ctx, 0, filename, 0);
+        qDebug() << "No preview found";
+        sem.acquire();
 
-          // FIXME: This does far more than the name suggests i.e. finds interlace method of Ftg
-          generate_waveform();
+        // FIXME: This does far more than the name suggests i.e. finds interlace method of Ftg
+        generate_waveform();
 
-          // save preview to file
-          for (auto& ms : ftg->videoTracks()) {
-            Q_ASSERT(ms);
-            const auto thumbPath = get_thumbnail_path(hash, ms);
-            auto tmp = ms->video_preview;
-            if (!tmp.save(thumbPath, THUMB_PREVIEW_FORMAT, THUMB_PREVIEW_QUALITY)) {
-              qWarning() << "Video Preview did not save." << thumbPath;
-            }
+        // save preview to file
+        for (auto& ms : ftg->videoTracks()) {
+          Q_ASSERT(ms);
+          const auto thumbPath = get_thumbnail_path(hash, ms);
+          auto tmp = ms->video_preview;
+          if (!tmp.save(thumbPath, THUMB_PREVIEW_FORMAT, THUMB_PREVIEW_QUALITY)) {
+            qWarning() << "Video Preview did not save." << thumbPath;
           }
-
-          for (auto& ms : ftg->audioTracks()) {
-            Q_ASSERT(ms);
-            QFile f(get_waveform_path(hash, ms));
-            f.open(QFile::WriteOnly);
-            if (f.write(ms->audio_preview.constData(), ms->audio_preview.size()) < 0) {
-              qWarning() << "Error occurred on write of waveform preview";
-            }
-            f.close();
-          }
-
-          sem.release();
         }
-      }
-      avformat_close_input(&fmt_ctx);
-    }
 
-    if (error) {
-      media->updateTooltip(errorStr);
-      emit set_icon(ICON_TYPE_ERROR, replace);
-      qCritical() << "Failed to generate preview, msg =" << errorStr << ", fileName =" << ftg->location();
-    } else {
-      qDebug() << "Preview generated, fileName =" << ftg->location();
-      ftg->has_preview_ = true;
-      media->updateTooltip();
+        for (auto& ms : ftg->audioTracks()) {
+          Q_ASSERT(ms);
+          QFile f(get_waveform_path(hash, ms));
+          f.open(QFile::WriteOnly);
+          if (f.write(ms->audio_preview.constData(), ms->audio_preview.size()) < 0) {
+            qWarning() << "Error occurred on write of waveform preview";
+          }
+          f.close();
+        }
+
+        sem.release();
+      }
     }
+    avformat_close_input(&fmt_ctx);
+  }
+
+  if (error) {
+    media->updateTooltip(errorStr);
+    emit set_icon(ICON_TYPE_ERROR, replace);
+    qCritical() << "Failed to generate preview, msg =" << errorStr << ", fileName =" << ftg->location();
+  } else {
+    qDebug() << "Preview generated, fileName =" << ftg->location();
+    ftg->has_preview_ = true;
+    media->updateTooltip();
   }
 }
 
 bool PreviewGenerator::generate_image_thumbnail(const FootagePtr& ftg) const
 {
-  // TODO: address image sequences. current implementation has false positives
   const QImage img(ftg->location());
   if (auto ms = ftg->videoTracks().front()) {
     ms->enabled           = true;
