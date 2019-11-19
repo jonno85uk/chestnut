@@ -40,7 +40,7 @@ void MediaTest::testCaseConstructorWithParent()
 void MediaTest::testCaseSetAsFootage()
 {
   Media mda;
-  auto ftg = std::make_shared<Footage>();
+  auto ftg = std::make_shared<Footage>(nullptr);
   QVERIFY(mda.setFootage(ftg) == true);
   QVERIFY(mda.setFootage(ftg) == false);
   ftg.reset();
@@ -76,7 +76,7 @@ void MediaTest::testCaseSetAsFolder()
 void MediaTest::testCaseClear()
 {
   Media mda;
-  auto ftg = std::make_shared<Footage>();
+  auto ftg = std::make_shared<Footage>(nullptr);
   mda.setFootage(ftg);
   mda.clearObject();
   QVERIFY(mda.type() == MediaType::NONE);

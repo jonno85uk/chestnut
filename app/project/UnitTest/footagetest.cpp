@@ -78,7 +78,7 @@ void  FootageTest::testCaseSaveAndLoad()
   auto parent_mda = std::make_shared<Media>(root_mda);
   Footage ftg(parent_mda);
   ftg.speed_ = speed;
-  ftg.url = url;
+  ftg.url_ = url;
   ftg.length_ = length;
   ftg.folder_ = folder;
   ftg.in = in_point;
@@ -92,7 +92,7 @@ void  FootageTest::testCaseSaveAndLoad()
   QXmlStreamReader input(output);
   QVERIFY(ftg.load(input) == true);
   QCOMPARE(ftg.speed_, speed);
-  QCOMPARE(ftg.url, url);
+  QCOMPARE(ftg.url_, url);
   QCOMPARE(ftg.length_, length);
   QCOMPARE(ftg.folder_, folder);
   QCOMPARE(ftg.in, in_point);

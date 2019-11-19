@@ -82,10 +82,6 @@ Sequence::Sequence(QVector<std::shared_ptr<Media>>& media_list, const QString& s
           if (!qFuzzyCompare(ms->video_frame_rate, 0.0)) {
             frame_rate_ = ms->video_frame_rate * ftg->speed_;
 
-            if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
-              frame_rate_ *= 2;
-            }
-
             // only break with a decent frame rate, otherwise there may be a better candidate
             got_video_values = true;
             break;
