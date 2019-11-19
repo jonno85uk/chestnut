@@ -73,18 +73,17 @@ class PreferencesDialog : public QDialog
     void setup_ui();
     void setup_kbd_shortcut_worker(QMenu* menu, QTreeWidgetItem* parent);
 
-    QLineEdit* custom_css_fn;
-    QLineEdit* imgSeqFormatEdit;
-    QComboBox* recordingComboBox;
-    QRadioButton* accurateSeekButton;
-    QRadioButton* fastSeekButton;
-    QTreeWidget* keyboard_tree;
-    QCheckBox* disable_img_multithread;
-    QDoubleSpinBox* upcoming_queue_spinbox;
-    QComboBox* upcoming_queue_type;
-    QDoubleSpinBox* previous_queue_spinbox;
-    QComboBox* previous_queue_type;
-    QSpinBox* effect_textbox_lines_field;
+    QLineEdit* custom_css_fn {nullptr};
+    QComboBox* recordingComboBox {nullptr};
+    QRadioButton* accurateSeekButton {nullptr};
+    QRadioButton* fastSeekButton {nullptr};
+    QTreeWidget* keyboard_tree {nullptr};
+    QCheckBox* disable_img_multithread {nullptr};
+    QDoubleSpinBox* upcoming_queue_spinbox {nullptr};
+    QComboBox* upcoming_queue_type {nullptr};
+    QDoubleSpinBox* previous_queue_spinbox {nullptr};
+    QComboBox* previous_queue_type {nullptr};
+    QSpinBox* effect_textbox_lines_field {nullptr};
 
     QVector<QAction*> key_shortcut_actions;
     QVector<QTreeWidgetItem*> key_shortcut_items;

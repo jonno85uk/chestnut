@@ -66,9 +66,6 @@ void Config::load(QString path)
     } else if (stream.name() == "PasteSeeks") {
       stream.readNext();
       paste_seeks = (stream.text() == "1");
-    } else if (stream.name() == "ImageSequenceFormats") {
-      stream.readNext();
-      img_seq_formats = stream.text().toString();
     } else if (stream.name() == "RectifiedWaveforms") {
       stream.readNext();
       rectified_waveforms = (stream.text() == "1");
@@ -187,7 +184,6 @@ void Config::save(QString path)
   stream.writeTextElement("EditToolAlsoSeeks", QString::number(edit_tool_also_seeks));
   stream.writeTextElement("SelectAlsoSeeks", QString::number(select_also_seeks));
   stream.writeTextElement("PasteSeeks", QString::number(paste_seeks));
-  stream.writeTextElement("ImageSequenceFormats", img_seq_formats);
   stream.writeTextElement("RectifiedWaveforms", QString::number(rectified_waveforms));
   stream.writeTextElement("DefaultTransitionLength", QString::number(default_transition_length));
   stream.writeTextElement("TimecodeView", QString::number(timecode_view));

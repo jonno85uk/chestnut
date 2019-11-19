@@ -53,7 +53,6 @@ struct Config {
     bool edit_tool_also_seeks {false};
     bool select_also_seeks {false};
     bool paste_seeks {true};
-    QString img_seq_formats {"bmp|dpx|exr|gif|jp2|jpeg|jpg|png|tga|tiff|tif"};
     bool rectified_waveforms {false};
     int default_transition_length {30};
     int timecode_view {TIMECODE_DROP};

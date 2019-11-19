@@ -78,7 +78,6 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
   accurateSeekButton->setChecked(!global::config.fast_seeking);
   fastSeekButton->setChecked(global::config.fast_seeking);
   recordingComboBox->setCurrentIndex(global::config.recording_mode - 1);
-  imgSeqFormatEdit->setText(global::config.img_seq_formats);
 }
 
 PreferencesDialog::~PreferencesDialog() {}
@@ -141,7 +140,6 @@ void PreferencesDialog::save() {
   global::config.css_path = custom_css_fn->text();
   MainWindow::instance().load_css_from_file(global::config.css_path);
   global::config.recording_mode = recordingComboBox->currentIndex() + 1;
-  global::config.img_seq_formats = imgSeqFormatEdit->text();
   global::config.fast_seeking = fastSeekButton->isChecked();
   global::config.disable_multithreading_for_images = disable_img_multithread->isChecked();
   global::config.upcoming_queue_size = upcoming_queue_spinbox->value();
@@ -298,13 +296,6 @@ void PreferencesDialog::setup_ui() {
   QPushButton* custom_css_browse = new QPushButton(tr("Browse"), general_tab);
   connect(custom_css_browse, SIGNAL(clicked(bool)), this, SLOT(browse_css_file()));
   general_layout->addWidget(custom_css_browse, 0, 2, 1, 1);
-
-  // General -> Image Sequence Formats
-  general_layout->addWidget(new QLabel(tr("Image sequence formats:")), 1, 0, 1, 1);
-
-  imgSeqFormatEdit = new QLineEdit(general_tab);
-
-  general_layout->addWidget(imgSeqFormatEdit, 1, 1, 1, 2);
 
   // General -> Audio Recording
   general_layout->addWidget(new QLabel(tr("Audio Recording:")), 2, 0, 1, 1);
