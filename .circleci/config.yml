@@ -13,11 +13,11 @@ jobs:
 
       - run:
           name: Setup Build Tools
-          command: 'apt install --assume-yes build-essential pkg-config qtchooser wget unzip desktop-file-utils'
+          command: 'apt install --assume-yes build-essential pkg-config qtchooser wget unzip desktop-file-utils git'
           
       - run:
           name: Install Libraries
-          command: 'apt install --assume-yes qt5-default libqt5svg5-dev qtmultimedia5-dev libavutil-dev libavformat-dev libavcodec-dev libavfilter-dev libavutil-dev libswscale-dev'
+          command: 'apt install --assume-yes qt5-default libqt5svg5-dev qtmultimedia5-dev libavutil-dev libavformat-dev libavcodec-dev libavfilter-dev libavutil-dev libswscale-dev libboost-dev'
           
       - run:
           name: Install MediaHandling
