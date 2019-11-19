@@ -14,9 +14,14 @@ jobs:
       - run:
           name: Setup Build Tools
           command: 'apt install --assume-yes build-essential pkg-config qtchooser wget unzip desktop-file-utils'
+          
       - run:
           name: Install Libraries
           command: 'apt install --assume-yes qt5-default libqt5svg5-dev qtmultimedia5-dev libavutil-dev libavformat-dev libavcodec-dev libavfilter-dev libavutil-dev libswscale-dev'
+          
+      - run:
+          name: Install MediaHandling
+          command: 'git clone https://github.com/jonno85uk/mediahandling.git mh; cd mh; mkdir build; cd build; cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr/local/ -DCMAKE_BUILD_TYPE=Release ..; make install'
 
       - run:
           name: Configure Build
