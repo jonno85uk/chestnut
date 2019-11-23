@@ -68,7 +68,7 @@ EffectField::EffectField(EffectRow* parent)
 EffectField::EffectField(EffectRow *parent, const EffectFieldType t, const QString &i) :
   QObject(parent),
   parent_row(parent),
-  type(t),
+  type_(t),
   id_(i)
 {
   switch (t) {
@@ -132,7 +132,7 @@ EffectField::EffectField(EffectRow *parent, const EffectFieldType t, const QStri
 }
 
 QVariant EffectField::get_previous_data() {
-  switch (type) {
+  switch (type_) {
     case EffectFieldType::DOUBLE: return dynamic_cast<LabelSlider*>(ui_element)->getPreviousValue();
     case EffectFieldType::COLOR: return dynamic_cast<ColorButton*>(ui_element)->getPreviousValue();
     case EffectFieldType::STRING: return dynamic_cast<TextEditEx*>(ui_element)->getPreviousValue();
@@ -141,7 +141,7 @@ QVariant EffectField::get_previous_data() {
     case EffectFieldType::FONT: return dynamic_cast<FontCombobox*>(ui_element)->getPreviousValue();
     case EffectFieldType::FILE_T: return dynamic_cast<EmbeddedFileChooser*>(ui_element)->getPreviousValue();
     default:
-      qWarning() << "Unknown Effect Field Type" << static_cast<int>(type);
+      qWarning() << "Unknown Effect Field Type" << static_cast<int>(type_);
       break;
   }
   return QVariant();
@@ -149,7 +149,7 @@ QVariant EffectField::get_previous_data() {
 
 QVariant EffectField::get_current_data()  const
 {
-  switch (type) {
+  switch (type_) {
     case EffectFieldType::DOUBLE: return dynamic_cast<LabelSlider*>(ui_element)->value();
     case EffectFieldType::COLOR: return dynamic_cast<ColorButton*>(ui_element)->get_color();
     case EffectFieldType::STRING: return dynamic_cast<TextEditEx*>(ui_element)->getPlainTextEx();
@@ -158,7 +158,7 @@ QVariant EffectField::get_current_data()  const
     case EffectFieldType::FONT: return dynamic_cast<FontCombobox*>(ui_element)->currentText();
     case EffectFieldType::FILE_T: return dynamic_cast<EmbeddedFileChooser*>(ui_element)->getFilename();
     default:
-      qWarning() << "Unknown Effect Field Type" << static_cast<int>(type);
+      qWarning() << "Unknown Effect Field Type" << static_cast<int>(type_);
       break;
   }
   return QVariant();
@@ -181,7 +181,7 @@ long EffectField::timecodeToFrame(double timecode)
 }
 
 void EffectField::set_current_data(const QVariant& data) {
-  switch (type) {
+  switch (type_) {
     case EffectFieldType::DOUBLE: return dynamic_cast<LabelSlider*>(ui_element)->set_value(data.toDouble(), false);
     case EffectFieldType::COLOR: return dynamic_cast<ColorButton*>(ui_element)->set_color(data.value<QColor>());
     case EffectFieldType::STRING: return dynamic_cast<TextEditEx*>(ui_element)->setPlainTextEx(data.toString());
@@ -190,7 +190,7 @@ void EffectField::set_current_data(const QVariant& data) {
     case EffectFieldType::FONT: return dynamic_cast<FontCombobox*>(ui_element)->setCurrentTextEx(data.toString());
     case EffectFieldType::FILE_T: return dynamic_cast<EmbeddedFileChooser*>(ui_element)->setFilename(data.toString());
     default:
-      qWarning() << "Unknown Effect Field Type" << static_cast<int>(type);
+      qWarning() << "Unknown Effect Field Type" << static_cast<int>(type_);
       break;
   }
 }
@@ -219,7 +219,7 @@ void EffectField::get_keyframe_data(double timecode, int &before, int &after, do
     }
   }
 
-  if ((type == EffectFieldType::DOUBLE || type == EffectFieldType::COLOR) && (before_keyframe_index > -1 && after_keyframe_index > -1)) {
+  if ((type_ == EffectFieldType::DOUBLE || type_ == EffectFieldType::COLOR) && (before_keyframe_index > -1 && after_keyframe_index > -1)) {
     // interpolate
     before = before_keyframe_index;
     after = after_keyframe_index;
@@ -249,7 +249,7 @@ QVariant EffectField::validate_keyframe_data(double timecode, bool async) {
     get_keyframe_data(timecode, before_keyframe, after_keyframe, progress);
 
     const QVariant& before_data = keyframes.at(before_keyframe).data;
-    switch (type) {
+    switch (type_) {
       case EffectFieldType::DOUBLE:
       {
         double value;
@@ -347,7 +347,7 @@ QVariant EffectField::validate_keyframe_data(double timecode, bool async) {
         dynamic_cast<EmbeddedFileChooser*>(ui_element)->setFilename(before_data.toString());
         break;
       default:
-        qWarning() << "Unhandled Effect Field" << static_cast<int>(type);
+        qWarning() << "Unhandled Effect Field" << static_cast<int>(type_);
         break;
     }//switch
   }
@@ -355,7 +355,7 @@ QVariant EffectField::validate_keyframe_data(double timecode, bool async) {
 }
 
 void EffectField::ui_element_change() {
-  bool dragging_double = (type == EffectFieldType::DOUBLE && dynamic_cast<LabelSlider*>(ui_element)->is_dragging());
+  bool dragging_double = (type_ == EffectFieldType::DOUBLE && dynamic_cast<LabelSlider*>(ui_element)->is_dragging());
   const auto ca = dragging_double ? nullptr : new ComboAction();
   make_key_from_change(ca);
   if (!dragging_double) {
@@ -382,7 +382,7 @@ const QVariant& EffectField::getDefaultData() const
 bool EffectField::setValue(const QVariant& value)
 {
   auto conv_ok = true;
-  switch (type) {
+  switch (type_) {
     case EffectFieldType::BOOL:
       set_bool_value(value.toString() == "true");
       break;
@@ -426,7 +426,7 @@ bool EffectField::setValue(const QVariant& value)
 QVariant EffectField::value() const
 {
   Q_ASSERT(ui_element);
-  if (type == EffectFieldType::BOOL) {
+  if (type_ == EffectFieldType::BOOL) {
     return dynamic_cast<QCheckBox*>(ui_element)->isChecked();
   } else {
     auto elem = reinterpret_cast<chestnut::ui::IEffectFieldWidget*>(ui_element);
@@ -434,6 +434,27 @@ QVariant EffectField::value() const
     return val;
   }
 }
+
+
+void EffectField::setPrefix(QString value)
+{
+  Q_ASSERT(ui_element);
+  if (type_ == EffectFieldType::DOUBLE) {
+    dynamic_cast<LabelSlider*>(ui_element)->setPrefix(value);
+  } else {
+    qWarning() << "Prefix not available with field-type";
+  }
+}
+void EffectField::setSuffix(QString value)
+{
+  Q_ASSERT(ui_element);
+  if (type_ == EffectFieldType::DOUBLE) {
+    dynamic_cast<LabelSlider*>(ui_element)->setSuffix(value);
+  } else {
+    qWarning() << "Prefix not available with field-type";
+  }
+}
+
 
 bool EffectField::load(QXmlStreamReader& stream)
 {
@@ -455,7 +476,7 @@ bool EffectField::save(QXmlStreamWriter& stream) const
 {
   stream.writeStartElement("field");
   stream.writeTextElement("name", id_);
-  stream.writeTextElement("value", fieldTypeValueToString(type, get_current_data()));
+  stream.writeTextElement("value", fieldTypeValueToString(type_, get_current_data()));
 
   for (const auto& key : keyframes) {
     if (!key.save(stream)) {

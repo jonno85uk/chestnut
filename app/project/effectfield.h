@@ -105,6 +105,10 @@ public:
 
   QVariant value() const;
 
+  void setPrefix(QString value);
+  void setSuffix(QString value);
+
+
   virtual bool load(QXmlStreamReader& stream) override;
   virtual bool save(QXmlStreamWriter& stream) const override;
 
@@ -125,7 +129,7 @@ public:
 
 
   EffectRow* parent_row;
-  EffectFieldType type{EffectFieldType::UNKNOWN};
+  EffectFieldType type_{EffectFieldType::UNKNOWN};
   QVector<EffectKeyframe> keyframes;
   QWidget* ui_element = nullptr;
 public slots:

@@ -886,7 +886,7 @@ void Effect::process_shader(const double timecode, GLTextureCoords& /*coords*/, 
     for (int j=0;j<row->fieldCount();j++) {
       EffectField* field = row->field(j);
       if (!field->name().isEmpty()) {
-        switch (field->type) {
+        switch (field->type_) {
           case EffectFieldType::DOUBLE:
             glsl_.program_->setUniformValue(field->name().toUtf8().constData(),
                                             static_cast<GLfloat>(field->get_double_value(timecode)));
@@ -913,7 +913,7 @@ void Effect::process_shader(const double timecode, GLTextureCoords& /*coords*/, 
             // not possible to send a string to a uniform value
             break;
           default:
-            qWarning() << "Unknown EffectField type" << static_cast<int>(field->type);
+            qWarning() << "Unknown EffectField type" << static_cast<int>(field->type_);
             break;
         }
       }
