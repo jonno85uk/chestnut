@@ -25,13 +25,28 @@
 #include "ui/labelslider.h"
 #include "ui/collapsiblewidget.h"
 
-VolumeEffect::VolumeEffect(ClipPtr c, const EffectMeta& em) : Effect(c, em) {
+constexpr auto VOLUME_MIN = 0;
+constexpr auto VOLUME_MAX = 1000;
+constexpr auto VOLUME_DEFAULT = 100;
+
+VolumeEffect::VolumeEffect(ClipPtr c, const EffectMeta& em) : Effect(c, em)
+{
 
 }
 
-void VolumeEffect::process_audio(double timecode_start, double timecode_end, quint8* samples, int nb_bytes, int) {
+VolumeEffect::~VolumeEffect()
+{
+  volume_val = nullptr;
+}
+
+void VolumeEffect::process_audio(const double timecode_start,
+                                 const double timecode_end,
+                                 quint8* samples,
+                                 const int nb_bytes,
+                                 const int channel_count)
+{
   double interval = (timecode_end-timecode_start)/nb_bytes;
-  for (int i=0;i<nb_bytes;i+=4) {
+  for (int i = 0; i < nb_bytes; i += 4) {
     double vol_val = log_volume(volume_val->get_double_value(timecode_start+(interval*i), true)*0.01);
 
     qint32 right_samp = static_cast<qint16> (((samples[i+3] & 0xFF) << 8) | (samples[i+2] & 0xFF));
@@ -66,9 +81,12 @@ void VolumeEffect::setupUi()
   }
   Effect::setupUi();
   EffectRowPtr volume_row = add_row(tr("Volume"));
+  Q_ASSERT(volume_row);
   volume_val = volume_row->add_field(EffectFieldType::DOUBLE, "volume");
-  volume_val->set_double_minimum_value(0);
+  Q_ASSERT(volume_val);
+  volume_val->set_double_minimum_value(VOLUME_MIN);
+  volume_val->set_double_maximum_value(VOLUME_MAX);
 
   // set defaults
-  volume_val->set_double_default_value(100);
+  volume_val->set_double_default_value(VOLUME_DEFAULT);
 }

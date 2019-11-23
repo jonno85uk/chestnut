@@ -25,11 +25,18 @@
 #include "ui/labelslider.h"
 #include "ui/collapsiblewidget.h"
 
-PanEffect::PanEffect(ClipPtr c, const EffectMeta& em) : Effect(c, em) {
+PanEffect::PanEffect(ClipPtr c, const EffectMeta& em)
+  : Effect(c, em)
+{
 
 }
 
-void PanEffect::process_audio(double timecode_start, double timecode_end, quint8* samples, int nb_bytes, int) {
+void PanEffect::process_audio(const double timecode_start,
+                              const double timecode_end,
+                              quint8* samples,
+                              const int nb_bytes,
+                              const int)
+{
   double interval = (timecode_end - timecode_start)/nb_bytes;
   for (int i=0;i<nb_bytes;i+=4) {
     double pval = log_volume(pan_val->get_double_value(timecode_start+(interval*i), true)*0.01);
@@ -58,7 +65,9 @@ void PanEffect::setupUi()
   }
   Effect::setupUi();
   EffectRowPtr pan_row = add_row(tr("Pan"));
+  Q_ASSERT(pan_row);
   pan_val = pan_row->add_field(EffectFieldType::DOUBLE, "pan");
+  Q_ASSERT(pan_val);
   pan_val->set_double_minimum_value(-100);
   pan_val->set_double_maximum_value(100);
 

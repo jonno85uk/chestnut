@@ -26,7 +26,12 @@ AudioNoiseEffect::AudioNoiseEffect(ClipPtr c, const EffectMeta& em) : Effect(c, 
 
 }
 
-void AudioNoiseEffect::process_audio(double timecode_start, double timecode_end, quint8 *samples, int nb_bytes, int) {
+void AudioNoiseEffect::process_audio(const double timecode_start,
+                                     const double timecode_end,
+                                     quint8 *samples,
+                                     const int nb_bytes,
+                                     const int)
+{
   double interval = (timecode_end - timecode_start)/nb_bytes;
   for (int i=0;i<nb_bytes;i+=4) {
     double timecode = timecode_start+(interval*i);

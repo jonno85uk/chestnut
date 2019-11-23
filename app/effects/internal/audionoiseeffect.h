@@ -28,8 +28,11 @@ public:
     AudioNoiseEffect(const AudioNoiseEffect& ) = delete;
     AudioNoiseEffect& operator=(const AudioNoiseEffect&) = delete;
 
-    virtual void process_audio(double timecode_start, double timecode_end,
-                               quint8* samples, int nb_bytes, int channel_count) override;
+    virtual void process_audio(const double timecode_start,
+                               const double timecode_end,
+                               quint8* samples,
+                               const int nb_bytes,
+                               const int channel_count) override;
 
     virtual void setupUi() override;
 

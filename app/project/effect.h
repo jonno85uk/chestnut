@@ -135,9 +135,30 @@ struct GLTextureCoords {
 qint16 mix_audio_sample(const qint16 a, const qint16 b);
 
 
-class Effect : public QObject,  public std::enable_shared_from_this<Effect>, public project::SequenceItem, public project::IXMLStreamer {
+class Effect : public QObject,  public std::enable_shared_from_this<Effect>,
+                public project::SequenceItem, public project::IXMLStreamer
+{
     Q_OBJECT
   public:
+    ClipPtr parent_clip; //TODO: make weak
+    EffectMeta meta{};
+    int id{-1};
+    CollapsibleWidget* container{nullptr};
+    // glsl effect
+    struct {
+        QString vert_{};
+        QString frag_{};
+        std::unique_ptr<QOpenGLShaderProgram> program_{};
+        int iterations_{1};
+    } glsl_{};
+
+    // superimpose effect
+    struct {
+        QImage img_{};
+        std::unique_ptr<QOpenGLTexture> texture_{};
+    } superimpose_{};
+    bool ui_setup{false};
+
     static void registerMeta(const EffectMeta& meta);
     static EffectMeta getRegisteredMeta(const QString& name);
     static const QMap<QString, EffectMeta>& getRegisteredMetas();
@@ -187,7 +208,11 @@ class Effect : public QObject,  public std::enable_shared_from_this<Effect>, pub
     virtual void process_shader(double timecode, GLTextureCoords& coords, const int iteration);
     virtual void process_coords(double timecode, GLTextureCoords& coords, int data);
     virtual GLuint process_superimpose(double timecode);
-    virtual void process_audio(double timecode_start, double timecode_end, quint8* samples, int nb_bytes, int channel_count);
+    virtual void process_audio(const double timecode_start,
+                               const double timecode_end,
+                               quint8* samples,
+                               const int nb_bytes,
+                               const int channel_count);
 
     virtual void gizmo_draw(double timecode, GLTextureCoords& coords);
 
@@ -197,24 +222,7 @@ class Effect : public QObject,  public std::enable_shared_from_this<Effect>, pub
 
     virtual void setupUi();
 
-    ClipPtr parent_clip; //TODO: make weak
-    EffectMeta meta{};
-    int id{-1};
-    CollapsibleWidget* container{nullptr};
-    // glsl effect
-    struct {
-        QString vert_{};
-        QString frag_{};
-        std::unique_ptr<QOpenGLShaderProgram> program_{};
-        int iterations_{1};
-    } glsl_{};
 
-    // superimpose effect
-    struct {
-        QImage img_{};
-        std::unique_ptr<QOpenGLTexture> texture_{};
-    } superimpose_{};
-    bool ui_setup{false};
 
 
 

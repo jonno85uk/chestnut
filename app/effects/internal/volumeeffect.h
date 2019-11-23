@@ -23,13 +23,22 @@
 class VolumeEffect : public Effect {
   public:
     VolumeEffect(ClipPtr c, const EffectMeta& em);
+    ~VolumeEffect() override;
 
     VolumeEffect(const VolumeEffect& ) = delete;
+    VolumeEffect(const VolumeEffect&& ) = delete;
     VolumeEffect& operator=(const VolumeEffect&) = delete;
+    VolumeEffect& operator=(const VolumeEffect&&) = delete;
 
-    void process_audio(double timecode_start, double timecode_end, quint8* samples, int nb_bytes, int channel_count) override;
+
+    void process_audio(const double timecode_start,
+                       const double timecode_end,
+                       quint8* samples,
+                       const int nb_bytes,
+                       const int channel_count) override;
     virtual void setupUi() override;
 
+  private:
     EffectField* volume_val {nullptr};
 };
 

@@ -32,7 +32,12 @@ ToneEffect::ToneEffect(ClipPtr c, const EffectMeta& em)
 
 }
 
-void ToneEffect::process_audio(double timecode_start, double timecode_end, quint8 *samples, int nb_bytes, int) {
+void ToneEffect::process_audio(const double timecode_start,
+                               const double timecode_end,
+                               quint8 *samples,
+                               const int nb_bytes,
+                               const int)
+{
   double interval = (timecode_end - timecode_start)/nb_bytes;
   for (int i=0;i<nb_bytes;i+=4) {
     double timecode = timecode_start+(interval*i);
@@ -68,18 +73,22 @@ void ToneEffect::setupUi()
   Effect::setupUi();
 
   type_val = add_row(tr("Type"))->add_field(EffectFieldType::COMBO, "type");
+  Q_ASSERT(type_val);
   type_val->add_combo_item("Sine", TONE_TYPE_SINE);
 
   freq_val = add_row(tr("Frequency"))->add_field(EffectFieldType::DOUBLE, "frequency");
+  Q_ASSERT(freq_val);
   freq_val->set_double_minimum_value(20);
   freq_val->set_double_maximum_value(20000);
   freq_val->set_double_default_value(1000);
 
   amount_val = add_row(tr("Amount"))->add_field(EffectFieldType::DOUBLE, "amount");
+  Q_ASSERT(amount_val);
   amount_val->set_double_minimum_value(0);
   amount_val->set_double_maximum_value(100);
   amount_val->set_double_default_value(25);
 
   mix_val = add_row(tr("Mix"))->add_field(EffectFieldType::BOOL, "mix");
+  Q_ASSERT(mix_val);
   mix_val->set_bool_value(true);
 }
