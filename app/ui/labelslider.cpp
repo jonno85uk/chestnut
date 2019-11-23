@@ -62,7 +62,7 @@ void LabelSlider::set_value(const double val, const bool userSet)
     internal_value = val;
   }
 
-  setText(valueToString(internal_value));
+  setText(prefix_ + valueToString(internal_value) + suffix_);
   if (userSet) {
     emit valueChanged();
   }
@@ -112,6 +112,16 @@ void LabelSlider::set_color(QString c)
     c = DEFAULT_LABEL_COLOUR;
   }
   setStyleSheet("QLabel{color:" + c + ";text-decoration:underline;}QLabel:disabled{color:#808080;}");
+}
+
+void LabelSlider::setPrefix(QString value)
+{
+  prefix_ = std::move(value);
+}
+
+void LabelSlider::setSuffix(QString value)
+{
+  suffix_ = std::move(value);
 }
 
 QVariant LabelSlider::getValue() const

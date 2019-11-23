@@ -148,7 +148,7 @@ void GraphEditor::update_panel() {
       int slider_index = 0;
       for (int i=0;i<row->fieldCount();i++) {
         EffectField* field = row->field(i);
-        if (field->type == EffectFieldType::DOUBLE) {
+        if (field->type_ == EffectFieldType::DOUBLE) {
           slider_proxies.at(slider_index)->set_value(row->field(i)->get_current_data().toDouble(), false);
           slider_index++;
         }
@@ -182,7 +182,7 @@ void GraphEditor::set_row(EffectRow *r)
   if (r != nullptr && r->isKeyframing()) {
     for (int i=0;i<r->fieldCount();i++) {
       EffectField* field = r->field(i);
-      if (field->type == EffectFieldType::DOUBLE) {
+      if (field->type_ == EffectFieldType::DOUBLE) {
         auto* slider_button = new QPushButton();
         slider_button->setCheckable(true);
         slider_button->setChecked(true);

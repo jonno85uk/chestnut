@@ -39,7 +39,7 @@ void EffectFieldTest::testCaseNextKey()
 void EffectFieldTest::testCaseSetValueColor()
 {
   EffectField fld(nullptr);
-  fld.type = EffectFieldType::COLOR;
+  fld.type_ = EffectFieldType::COLOR;
   fld.ui_element = new ColorButton;
   auto val = "#FF000000";
   fld.setValue(val);

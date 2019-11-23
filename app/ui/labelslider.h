@@ -50,6 +50,8 @@ class LabelSlider : public QLabel, chestnut::ui::IEffectFieldWidget
     double getPreviousValue();
     void set_previous_value();
     void set_color(QString c="");
+    void setPrefix(QString value);
+    void setSuffix(QString value);
 
     QVariant getValue() const override;
     void setValue(QVariant val) override;
@@ -61,6 +63,9 @@ class LabelSlider : public QLabel, chestnut::ui::IEffectFieldWidget
     std::optional<double> min_value;
     std::optional<double> max_value;
     std::optional<double> step_value_;
+
+    QString suffix_;
+    QString prefix_;
 
     double default_value;
     double internal_value {-1.0};

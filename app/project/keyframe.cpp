@@ -129,7 +129,7 @@ bool EffectKeyframe::save(QXmlStreamWriter& stream) const
 
   stream.writeAttribute(TYPE_TAG, QString::number(static_cast<int>(type)));
 
-  stream.writeTextElement(DATA_TAG, fieldTypeValueToString(parent_->type, data));
+  stream.writeTextElement(DATA_TAG, fieldTypeValueToString(parent_->type_, data));
   stream.writeTextElement(TIME_TAG, QString::number(time));
   stream.writeTextElement(PRE_HANDLE_X_TAG, QString::number(pre_handle_x));
   stream.writeTextElement(PRE_HANDLE_Y_TAG, QString::number(pre_handle_y));
