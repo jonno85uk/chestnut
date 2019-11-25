@@ -30,6 +30,7 @@ constexpr auto VOLUME_MIN = -120.0;
 constexpr auto VOLUME_MAX = 10;
 constexpr auto VOLUME_DEFAULT = 0;
 constexpr auto VOLUME_SUFFIX = " dB";
+constexpr auto VOLUME_STEP = 0.1;
 
 VolumeEffect::VolumeEffect(ClipPtr c, const EffectMeta& em) : Effect(c, em)
 {
@@ -41,6 +42,11 @@ VolumeEffect::~VolumeEffect()
   volume_val = nullptr;
 }
 
+inline double decibelToPowerRatio(const double db)
+{
+  return pow(10.0, db / 20.0);
+}
+
 void VolumeEffect::process_audio(const double timecode_start,
                                  const double timecode_end,
                                  quint8* samples,
@@ -48,17 +54,21 @@ void VolumeEffect::process_audio(const double timecode_start,
                                  const int /*channel_count*/)
 {
   Q_ASSERT(nb_bytes != 0);
+  Q_ASSERT(volume_val);
+
   const double interval = (timecode_end - timecode_start) / nb_bytes;
   for (size_t i = 0; i < nb_bytes; i += 4) {
-    const double vol_val = log_volume(volume_val->get_double_value(timecode_start + (interval * i), true) * 0.01);
+    const auto vol_val = decibelToPowerRatio(volume_val->get_double_value(timecode_start + (interval * i), true));
 
     gsl::span<quint8> samps(samples, static_cast<size_t>(nb_bytes));
     qint32 right_samp = static_cast<qint16> (((samps.at(i + 3) & 0xFF) << 8) | (samps.at(i + 2) & 0xFF));
     qint32 left_samp = static_cast<qint16> (((samps.at(i + 1) & 0xFF) << 8) | (samps.at(i) & 0xFF));
 
-    left_samp *= vol_val;
-    right_samp *= vol_val;
+    // Adjust amplitude
+    left_samp = lround(left_samp * vol_val);
+    right_samp = lround (right_samp * vol_val);
 
+    // Clamping
     if (left_samp > INT16_MAX) {
       left_samp = INT16_MAX;
     } else if (left_samp < INT16_MIN) {
@@ -91,6 +101,7 @@ void VolumeEffect::setupUi()
   volume_val->set_double_minimum_value(VOLUME_MIN);
   volume_val->set_double_maximum_value(VOLUME_MAX);
   volume_val->setSuffix(VOLUME_SUFFIX);
+  volume_val->set_double_step_value(VOLUME_STEP);
 
   // set defaults
   volume_val->set_double_default_value(VOLUME_DEFAULT);
