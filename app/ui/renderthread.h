@@ -27,6 +27,7 @@ class RenderThread : public QThread {
     RenderThread& operator=(const RenderThread&&) = delete;
 
     void paint();
+    void setAsExporting(const bool value);
     void start_render(QOpenGLContext* share, SequenceWPtr s, const bool grab=false, GLvoid *pixel_buffer=nullptr);
     bool did_texture_fail();
     void cancel();
@@ -59,6 +60,7 @@ class RenderThread : public QThread {
     bool frame_grabbing_ {false};
     std::atomic_bool draw_clipped_{false};
     GLvoid* pix_buf_{nullptr};
+    std::atomic_bool exporting_ {false};
 };
 
 #endif // RENDERTHREAD_H

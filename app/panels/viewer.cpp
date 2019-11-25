@@ -550,6 +550,20 @@ void Viewer::setMarker() const
   }
 }
 
+
+void Viewer::enableFXMute(const bool value)
+{
+  Q_ASSERT(fx_mute_button_);
+  fx_mute_button_->setVisible(value);
+  fx_mute_button_->setEnabled(value);
+}
+
+
+bool Viewer::usingEffects() const
+{
+  return !fx_mute_;
+}
+
 void Viewer::update_viewer()
 {
   update_header_zoom();
@@ -752,6 +766,21 @@ void Viewer::setup_ui()
   connect(btnSkipToEnd, SIGNAL(clicked(bool)), this, SLOT(go_to_out()));
   playback_control_layout->addWidget(btnSkipToEnd);
 
+  fx_mute_button_ = new QPushButton(playback_controls);
+  fx_mute_button_->setCheckable(true);
+  fx_mute_button_->setToolTip(tr(""));
+  QIcon mute_icon;
+  mute_icon.addFile(QStringLiteral(":/icons/fxmute.png"), QSize(), QIcon::Normal, QIcon::Off);
+  mute_icon.addFile(QStringLiteral(":/icons/fxmute-disabled.png"), QSize(), QIcon::Disabled, QIcon::Off);
+  fx_mute_button_->setIcon(mute_icon);
+  fx_mute_button_->setText("M");
+  fx_mute_button_->setMinimumSize(16, 16);
+  fx_mute_button_->setMaximumSize(24, 24);
+  connect(fx_mute_button_, &QPushButton::toggled, this, &Viewer::fxMute);
+  playback_control_layout->addWidget(fx_mute_button_);
+  fx_mute_button_->setVisible(false);
+  fx_mute_button_->setEnabled(false);
+
   lower_control_layout->addWidget(playback_controls);
 
   auto end_timecode_container = new QWidget(lower_controls);
@@ -920,6 +949,13 @@ void Viewer::recording_flasher_update()
 void Viewer::resize_move(double d)
 {
   set_zoom_value(headers->get_zoom() * d);
+}
+
+
+void Viewer::fxMute(const bool value)
+{
+  fx_mute_ = value;
+  reRender();
 }
 
 void Viewer::clean_created_seq()

@@ -10,6 +10,7 @@
 
 class Viewer;
 
+
 GLuint compose_sequence(Viewer* viewer,
                         QOpenGLContext* ctx,
                         SequencePtr seq,
@@ -18,7 +19,8 @@ GLuint compose_sequence(Viewer* viewer,
                         const bool render_audio,
                         EffectPtr& gizmos,
                         bool &texture_failed,
-                        const bool rendering);
+                        const bool rendering,
+                        const bool use_effects=true);
 
 void compose_audio(Viewer* viewer, SequencePtr seq, bool render_audio);
 

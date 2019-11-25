@@ -11,6 +11,7 @@
 #include "project/effect.h"
 #include "project/footage.h"
 #include "project/transition.h"
+#include "panels/panelmanager.h"
 
 #include "ui/collapsiblewidget.h"
 
@@ -128,7 +129,8 @@ GLuint compose_sequence(Viewer* viewer,
                         const bool render_audio,
                         EffectPtr &gizmos,
                         bool &texture_failed,
-                        const bool rendering)
+                        const bool rendering,
+                        const bool use_effects)
 {
   GLint current_fbo = 0;
   if (video) {
@@ -357,51 +359,52 @@ GLuint compose_sequence(Viewer* viewer,
             glScalef(scale_multiplier, scale_multiplier, 1);
           }
 
-          // EFFECT CODE START
-          const double timecode = clp->timecode(playhead);
-
           EffectPtr first_gizmo_effect = nullptr;
           EffectPtr selected_effect = nullptr;
+          const double timecode = clp->timecode(playhead);
 
-          for (auto& eff : clp->effects) {
-            if (!eff) {
-              continue;
-            }
-            process_effect(ctx, clp, eff, timecode, coords, composite_texture, fbo_switcher, texture_failed, TA_NO_TRANSITION);
-
-            if (eff->are_gizmos_enabled()) {
-              if (first_gizmo_effect == nullptr) {
-                first_gizmo_effect = eff;
+          // EFFECT CODE START
+          if (use_effects || render_audio) {
+            for (auto& eff : clp->effects) {
+              if (!eff) {
+                continue;
               }
-              if (eff->container->selected) {
-                selected_effect = eff;
+              process_effect(ctx, clp, eff, timecode, coords, composite_texture, fbo_switcher, texture_failed, TA_NO_TRANSITION);
+
+              if (eff->are_gizmos_enabled()) {
+                if (first_gizmo_effect == nullptr) {
+                  first_gizmo_effect = eff;
+                }
+                if (eff->container->selected) {
+                  selected_effect = eff;
+                }
+              }
+            }//for
+
+            if (selected_effect != nullptr) {
+              gizmos = selected_effect;
+            } else if (clp->isSelected(true)) {
+              gizmos = first_gizmo_effect;
+            }
+
+            if (clp->openingTransition() != nullptr) {
+              const int transition_progress = playhead - clp->timelineInWithTransition();
+              if (transition_progress < clp->openingTransition()->get_length()) {
+                EffectPtr trans(clp->openingTransition());
+                process_effect(ctx, clp, trans,
+                               static_cast<double>(transition_progress) / clp->openingTransition()->get_length(),
+                               coords, composite_texture, fbo_switcher, texture_failed, TA_OPENING_TRANSITION);
               }
             }
-          }//for
 
-          if (selected_effect != nullptr) {
-            gizmos = selected_effect;
-          } else if (clp->isSelected(true)) {
-            gizmos = first_gizmo_effect;
-          }
-
-          if (clp->openingTransition() != nullptr) {
-            const int transition_progress = playhead - clp->timelineInWithTransition();
-            if (transition_progress < clp->openingTransition()->get_length()) {
-              EffectPtr trans(clp->openingTransition());
-              process_effect(ctx, clp, trans,
-                             static_cast<double>(transition_progress) / clp->openingTransition()->get_length(),
-                             coords, composite_texture, fbo_switcher, texture_failed, TA_OPENING_TRANSITION);
-            }
-          }
-
-          if (clp->closingTransition() != nullptr) {
-            const int transition_progress = playhead - (clp->timelineOutWithTransition() - clp->closingTransition()->get_length());
-            if ( (transition_progress >= 0) && (transition_progress < clp->closingTransition()->get_length()) ) {
-              EffectPtr trans(clp->closingTransition());
-              process_effect(ctx, clp, trans,
-                             static_cast<double>(transition_progress) / clp->closingTransition()->get_length(),
-                             coords, composite_texture, fbo_switcher, texture_failed, TA_CLOSING_TRANSITION);
+            if (clp->closingTransition() != nullptr) {
+              const int transition_progress = playhead - (clp->timelineOutWithTransition() - clp->closingTransition()->get_length());
+              if ( (transition_progress >= 0) && (transition_progress < clp->closingTransition()->get_length()) ) {
+                EffectPtr trans(clp->closingTransition());
+                process_effect(ctx, clp, trans,
+                               static_cast<double>(transition_progress) / clp->closingTransition()->get_length(),
+                               coords, composite_texture, fbo_switcher, texture_failed, TA_CLOSING_TRANSITION);
+              }
             }
           }
           // EFFECT CODE END
@@ -470,8 +473,9 @@ GLuint compose_sequence(Viewer* viewer,
           glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
 
           // prepare gizmos
-          if ( ( (gizmos != nullptr) && nests.isEmpty() )
-               && ( (gizmos == first_gizmo_effect) || (gizmos == selected_effect) ) )  {
+          if (panels::PanelManager::sequenceViewer().usingEffects()
+              && ( (gizmos != nullptr) && nests.isEmpty() )
+              && ( (gizmos == first_gizmo_effect) || (gizmos == selected_effect) ) )  {
             gizmos->gizmo_draw(timecode, coords); // set correct gizmo coords
             gizmos->gizmo_world_to_screen(); // convert gizmo coords to screen coords
           }

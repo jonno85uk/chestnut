@@ -105,6 +105,13 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
      */
     virtual void setMarker() const override;
 
+    /**
+     * @brief         Enable/disable the use of viewed sequence
+     * @param value   true==enable
+     */
+    void enableFXMute(const bool value);
+
+    bool usingEffects() const;
 
   protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -122,11 +129,15 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
     void go_to_end();
     void close_media();
 
+  signals:
+    void muteEffects(const bool value);
+
   private slots:
     void update_playhead();
     void timer_update();
     void recording_flasher_update();
     void resize_move(double d);
+    void fxMute(const bool value);
 
   private:
     friend class ViewerTest;
@@ -153,11 +164,14 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
     QPushButton* btnPlay {nullptr};
     QPushButton* btnFastForward {nullptr};
     QPushButton* btnSkipToEnd {nullptr};
+    QPushButton* fx_mute_button_ {nullptr};
 
     bool cue_recording_internal {false};
     QTimer recording_flasher;
 
     int64_t previous_playhead {-1};
+
+    std::atomic_bool fx_mute_ {false};
 
     void update_window_title();
     void clean_created_seq();

@@ -8,6 +8,7 @@
 #include "ui/renderfunctions.h"
 #include "playback/playback.h"
 #include "project/sequence.h"
+#include "panels/panelmanager.h"
 
 RenderThread::RenderThread()
 {
@@ -113,7 +114,8 @@ void RenderThread::paint()
 
   QVector<ClipPtr> nests;
   if (const SequencePtr& sequenceNow = seq.lock()) {
-    compose_sequence(nullptr, ctx, sequenceNow, nests, true, false, gizmos, texture_failed, false);
+    compose_sequence(nullptr, ctx, sequenceNow, nests, true, false, gizmos, texture_failed, false,
+                     (exporting_ || panels::PanelManager::sequenceViewer().usingEffects()));
 
     if (frame_grabbing_) {
       if (texture_failed) {
@@ -140,6 +142,12 @@ void RenderThread::paint()
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
   }
+}
+
+
+void RenderThread::setAsExporting(const bool value)
+{
+  exporting_ = value;
 }
 
 void RenderThread::start_render(QOpenGLContext *share, SequenceWPtr s, const bool grab, GLvoid* pixel_buffer)

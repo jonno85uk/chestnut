@@ -466,6 +466,7 @@ void ExportThread::run()
     qCritical() << "No render thread available";
     return;
   }
+  renderer->setAsExporting(true);
 
   continue_encode_ = setUpContext(*renderer, PanelManager::sequenceViewer());
   continue_encode_ = continue_encode_ && setupContainer();
@@ -657,6 +658,7 @@ void ExportThread::run()
   }
 
   setDownContext(*renderer, PanelManager::sequenceViewer());
+  renderer->setAsExporting(false);
 }
 
 void ExportThread::wake()

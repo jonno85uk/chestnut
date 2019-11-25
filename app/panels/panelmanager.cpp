@@ -272,6 +272,7 @@ Viewer& PanelManager::sequenceViewer()
     sequence_viewer_ = new Viewer(parent_);
     sequence_viewer_->setObjectName("seq_viewer");
     sequence_viewer_->set_panel_name(QCoreApplication::translate("Viewer", "Sequence Viewer"));
+    sequence_viewer_->enableFXMute(true);
   }
   return *sequence_viewer_;
 }
