@@ -139,7 +139,7 @@ void TransformEffect::process_coords(double timecode, GLTextureCoords& coords, i
       glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
       break;
     default:
-      qCritical() << "Invalid blend mode. This is a bug - please contact developers";
+      qCritical() << "Invalid blend mode.";
   }
 
   // opacity
@@ -166,8 +166,8 @@ void TransformEffect::gizmo_draw(double /*timecode*/, GLTextureCoords& coords)
   rotate_gizmo->world_pos[0] = QPoint(lerp(top_center_gizmo->world_pos[0].x(),
                                            bottom_center_gizmo->world_pos[0].x(),
                                            -0.1),
-                                      lerp(top_center_gizmo->world_pos[0].y(),
-                                           bottom_center_gizmo->world_pos[0].y(),
+                                      lerp(bottom_center_gizmo->world_pos[0].y(),
+                                           top_center_gizmo->world_pos[0].y(),
                                            -0.1));
 
 

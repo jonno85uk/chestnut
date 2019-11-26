@@ -505,8 +505,8 @@ void ViewerWidget::draw_title_safe_area()
 {
   double halfWidth = 0.5;
   double halfHeight = 0.5;
-  double viewportAr = static_cast<double>(width()) / height();
-  double halfAr = viewportAr*0.5;
+  const double viewportAr = static_cast<double>(width()) / height();
+  const double halfAr = viewportAr * 0.5;
 
   if (e_config.use_custom_title_safe_ratio && (e_config.custom_title_safe_ratio > 0) ) {
     if (e_config.custom_title_safe_ratio > viewportAr) {
@@ -574,10 +574,10 @@ void ViewerWidget::drawDot(const EffectGizmoPtr& g)
 {
   const float dot_size = GIZMO_DOT_SIZE / width() * viewer->getSequence()->width();
   glBegin(GL_QUADS);
-  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y()-dot_size, GIZMO_Z);
-  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y()-dot_size, GIZMO_Z);
-  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y()+dot_size, GIZMO_Z);
-  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y()+dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y() - dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y() - dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y() + dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y() + dot_size, GIZMO_Z);
   glEnd();
 }
 
