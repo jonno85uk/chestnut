@@ -36,28 +36,28 @@ class TransformEffect : public Effect {
   public slots:
     void toggle_uniform_scale(bool enabled);
   private:
-    EffectField* position_x = nullptr;
-    EffectField* position_y = nullptr;
-    EffectField* scale_x = nullptr;
-    EffectField* scale_y = nullptr;
-    EffectField* uniform_scale_field = nullptr;
-    EffectField* rotation = nullptr;
-    EffectField* anchor_x_box = nullptr;
-    EffectField* anchor_y_box = nullptr;
-    EffectField* opacity = nullptr;
-    EffectField* blend_mode_box = nullptr;
+    EffectField* position_x {nullptr};
+    EffectField* position_y {nullptr};
+    EffectField* scale_x {nullptr};
+    EffectField* scale_y {nullptr};
+    EffectField* uniform_scale_field {nullptr};
+    EffectField* rotation {nullptr};
+    EffectField* anchor_x_box {nullptr};
+    EffectField* anchor_y_box {nullptr};
+    EffectField* opacity {nullptr};
+    EffectField* blend_mode_box {nullptr};
 
-    EffectGizmoPtr top_left_gizmo = nullptr;
-    EffectGizmoPtr top_center_gizmo = nullptr;
-    EffectGizmoPtr top_right_gizmo = nullptr;
-    EffectGizmoPtr bottom_left_gizmo = nullptr;
-    EffectGizmoPtr bottom_center_gizmo = nullptr;
-    EffectGizmoPtr bottom_right_gizmo = nullptr;
-    EffectGizmoPtr left_center_gizmo = nullptr;
-    EffectGizmoPtr right_center_gizmo = nullptr;
-    EffectGizmoPtr anchor_gizmo = nullptr;
-    EffectGizmoPtr rotate_gizmo = nullptr;
-    EffectGizmoPtr rect_gizmo = nullptr;
+    EffectGizmoPtr top_left_gizmo {nullptr};
+    EffectGizmoPtr top_center_gizmo {nullptr};
+    EffectGizmoPtr top_right_gizmo {nullptr};
+    EffectGizmoPtr bottom_left_gizmo {nullptr};
+    EffectGizmoPtr bottom_center_gizmo {nullptr};
+    EffectGizmoPtr bottom_right_gizmo {nullptr};
+    EffectGizmoPtr left_center_gizmo {nullptr};
+    EffectGizmoPtr right_center_gizmo {nullptr};
+    EffectGizmoPtr anchor_gizmo {nullptr};
+    EffectGizmoPtr rotate_gizmo {nullptr};
+    EffectGizmoPtr rect_gizmo {nullptr};
 
     bool set;
 };

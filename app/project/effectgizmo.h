@@ -41,24 +41,23 @@ enum class GizmoType {
 class EffectGizmo
 {
 public:
-    explicit EffectGizmo(const GizmoType type);
-
-
     QVector<QPoint> world_pos;
     QVector<QPoint> screen_pos;
 
-    EffectField* x_field1;
-    double x_field_multi1;
-    EffectField* y_field1;
-    double y_field_multi1;
-    EffectField* x_field2;
-    double x_field_multi2;
-    EffectField* y_field2;
-    double y_field_multi2;
+    EffectField* x_field1 {nullptr};
+    double x_field_multi1 {1.0};
+    EffectField* y_field1 {nullptr};
+    double y_field_multi1 {1.0};
+    EffectField* x_field2 {nullptr};
+    double x_field_multi2 {1.0};
+    EffectField* y_field2 {nullptr};
+    double y_field_multi2 {1.0};
+    QColor color;
+
+    explicit EffectGizmo(const GizmoType type);
 
     void set_previous_value();
 
-    QColor color;
     int get_point_count();
 
     GizmoType get_type() const;

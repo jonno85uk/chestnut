@@ -469,7 +469,7 @@ GLuint compose_sequence(Viewer* viewer,
           if ( ( (gizmos != nullptr) && nests.isEmpty() )
                && ( (gizmos == first_gizmo_effect) || (gizmos == selected_effect) ) )  {
             gizmos->gizmo_draw(timecode, coords); // set correct gizmo coords
-            gizmos->gizmo_world_to_screen(); // convert gizmo coords to screen coords
+            gizmos->gizmo_world_to_screen();      // convert gizmo coords to screen coords
           }
 
           if (!nests.isEmpty()) {

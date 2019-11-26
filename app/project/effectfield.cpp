@@ -490,7 +490,8 @@ void EffectField::set_enabled(bool e) {
   ui_element->setEnabled(e);
 }
 
-double EffectField::get_double_value(double timecode, bool async) {
+double EffectField::get_double_value(double timecode, bool async)
+{
   if (async && hasKeyframes()) {
     return validate_keyframe_data(timecode, true).toDouble();
   }
