@@ -332,16 +332,16 @@ void ViewerWidget::context_destroy()
   doneCurrent();
 }
 
-EffectGizmoPtr ViewerWidget::get_gizmo_from_mouse(int x, int y)
+EffectGizmoPtr ViewerWidget::get_gizmo_from_mouse(const int x, const int y)
 {
   if (gizmos == nullptr) {
     return nullptr;
   }
 
   double multiplier = static_cast<double>(viewer->getSequence()->width()) / width();
-  QPoint mouse_pos(qRound(x * multiplier), qRound((height() - y) * multiplier));
-  int dot_size = 2 * qRound(GIZMO_DOT_SIZE * multiplier);
-  int target_size = 2 * qRound(GIZMO_TARGET_SIZE * multiplier);
+  const QPoint mouse_pos(qRound(x * multiplier), qRound(y * multiplier));
+  const int dot_size = 2 * qRound(GIZMO_DOT_SIZE * multiplier);
+  const int target_size = 2 * qRound(GIZMO_TARGET_SIZE * multiplier);
   for (int i = 0; i < gizmos->gizmo_count(); i++) {
     EffectGizmoPtr g = gizmos->gizmo(i);
     Q_ASSERT(g);

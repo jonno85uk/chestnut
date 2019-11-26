@@ -91,7 +91,7 @@ private:
     void draw_waveform_func();
     void draw_title_safe_area();
     void draw_gizmos();
-    EffectGizmoPtr get_gizmo_from_mouse(int x, int y);
+    EffectGizmoPtr get_gizmo_from_mouse(const int x, const int y);
     void move_gizmos(QMouseEvent *event, bool done);
     void seek_from_click(int x);
 
