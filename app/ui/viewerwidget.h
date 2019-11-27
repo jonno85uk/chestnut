@@ -72,6 +72,7 @@ public:
 
     void frame_update();
     RenderThread* get_renderer() noexcept;
+    void enableGizmos(const bool enable) noexcept;
 public slots:
     void set_waveform_scroll(int s);
 protected:
@@ -88,7 +89,8 @@ private:
     RenderThread* renderer {nullptr};
     ViewerWindow* window {nullptr};
     QString frame_file_name_;
-    bool save_frame_{false};
+    bool save_frame_ {false};
+    bool gizmos_enabled_ {false};
 
     void draw_waveform_func();
     void draw_title_safe_area();

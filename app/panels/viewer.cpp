@@ -85,11 +85,15 @@ Viewer::Viewer(QWidget *parent) :
   headers->viewer_ = this;
   headers->snapping = false;
   headers->show_text(false);
+  Q_ASSERT(viewer_container);
   viewer_container->viewer = this;
   viewer_widget = viewer_container->child;
+  Q_ASSERT(viewer_widget);
   viewer_widget->viewer = this;
+  viewer_widget->enableGizmos(!fx_mute_);
   set_media(nullptr);
 
+  Q_ASSERT(currentTimecode);
   currentTimecode->setEnabled(false);
   currentTimecode->set_minimum_value(0);
   currentTimecode->set_default_value(qSNaN());
@@ -555,7 +559,6 @@ void Viewer::enableFXMute(const bool value)
 {
   Q_ASSERT(fx_mute_button_);
   fx_mute_button_->setVisible(value);
-  fx_mute_button_->setEnabled(value);
 }
 
 
@@ -773,7 +776,10 @@ void Viewer::setup_ui()
   mute_icon.addFile(QStringLiteral(":/icons/fxmute.png"), QSize(), QIcon::Normal, QIcon::Off);
   mute_icon.addFile(QStringLiteral(":/icons/fxmute-disabled.png"), QSize(), QIcon::Disabled, QIcon::Off);
   fx_mute_button_->setIcon(mute_icon);
-  fx_mute_button_->setText("M");
+  fx_mute_button_->setText("fx");
+  QFont fx_font;
+  fx_font.setItalic(true);
+  fx_mute_button_->setFont(fx_font);
   fx_mute_button_->setMinimumSize(16, 16);
   fx_mute_button_->setMaximumSize(24, 24);
   connect(fx_mute_button_, &QPushButton::toggled, this, &Viewer::fxMute);
@@ -955,6 +961,7 @@ void Viewer::resize_move(double d)
 void Viewer::fxMute(const bool value)
 {
   fx_mute_ = value;
+  viewer_widget->enableGizmos(!value);
   reRender();
 }
 

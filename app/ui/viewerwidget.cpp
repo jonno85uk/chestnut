@@ -212,7 +212,8 @@ void ViewerWidget::fullscreen_menu_action(QAction *action)
   }
 }
 
-void ViewerWidget::set_fit_zoom() {
+void ViewerWidget::set_fit_zoom()
+{
   container->fit = true;
   container->adjust();
 }
@@ -302,6 +303,11 @@ void ViewerWidget::frame_update()
 RenderThread* ViewerWidget::get_renderer() noexcept
 {
   return renderer;
+}
+
+void ViewerWidget::enableGizmos(const bool enable) noexcept
+{
+  gizmos_enabled_ = enable;
 }
 
 void ViewerWidget::seek_from_click(int x)
@@ -611,6 +617,9 @@ void ViewerWidget::drawTarget(const EffectGizmoPtr& g) const
 
 void ViewerWidget::draw_gizmos()
 {
+  if (!gizmos_enabled_) {
+    return;
+  }
   float color[4];
   glGetFloatv(GL_CURRENT_COLOR, color);
 
