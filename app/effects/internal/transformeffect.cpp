@@ -40,41 +40,32 @@ constexpr int BLEND_MODE_NORMAL = 0;
 constexpr int BLEND_MODE_SCREEN = 1;
 constexpr int BLEND_MODE_MULTIPLY = 2;
 constexpr int BLEND_MODE_OVERLAY = 3;
+constexpr auto SCALE_DEFAULT_VALUE = 100;
+constexpr auto OPACITY_DEFAULT_VALUE = 100;
+constexpr auto ANCHOR_DEFAULT_VALUE = 0;
 
 TransformEffect::TransformEffect(ClipPtr c, const EffectMeta& em) : Effect(c, em)
 {
   setCapability(Capability::COORDS);
 }
 
-void adjust_field(EffectField* field, double old_offset, double new_offset) {
-  if (field->keyframes.size() > 0) {
-    for (int i=0;i<field->keyframes.size();i++) {
-      field->keyframes[i].data = field->keyframes.at(i).data.toDouble() - old_offset + new_offset;
-    }
-  } else {
-    field->set_current_data(field->get_current_data().toDouble() - old_offset + new_offset);
-  }
-}
-
-void TransformEffect::refresh() {
+void TransformEffect::refresh()
+{
   if (ui_setup && parent_clip != nullptr && parent_clip->sequence != nullptr) {
-    double new_default_pos_x = parent_clip->sequence->width()/2;
-    double new_default_pos_y = parent_clip->sequence->height()/2;
+    const double new_default_pos_x = parent_clip->sequence->width() >> 1;
+    const double new_default_pos_y = parent_clip->sequence->height() >> 1;
 
-    double default_pos_x = new_default_pos_x;
-    double default_pos_y = new_default_pos_y;
+    position_x->set_double_default_value(new_default_pos_x);
+    position_y->set_double_default_value(new_default_pos_y);
+    scale_x->set_double_default_value(SCALE_DEFAULT_VALUE);
+    scale_y->set_double_default_value(SCALE_DEFAULT_VALUE);
 
-    position_x->set_double_default_value(default_pos_x);
-    position_y->set_double_default_value(default_pos_y);
-    scale_x->set_double_default_value(100);
-    scale_y->set_double_default_value(100);
+    anchor_x_box->set_double_default_value(ANCHOR_DEFAULT_VALUE);
+    anchor_y_box->set_double_default_value(ANCHOR_DEFAULT_VALUE);
+    opacity->set_double_default_value(OPACITY_DEFAULT_VALUE);
 
-    anchor_x_box->set_double_default_value(0);
-    anchor_y_box->set_double_default_value(0);
-    opacity->set_double_default_value(100);
-
-    double x_percent_multipler = 200.0 / parent_clip->sequence->width();
-    double y_percent_multipler = 200.0 / parent_clip->sequence->height();
+    const double x_percent_multipler = 200.0 / parent_clip->sequence->width();
+    const double y_percent_multipler = 200.0 / parent_clip->sequence->height();
     top_left_gizmo->x_field_multi1 = -x_percent_multipler;
     top_left_gizmo->y_field_multi1 = -y_percent_multipler;
     top_center_gizmo->y_field_multi1 = -y_percent_multipler;
@@ -93,7 +84,8 @@ void TransformEffect::refresh() {
   }
 }
 
-void TransformEffect::toggle_uniform_scale(bool enabled) {
+void TransformEffect::toggle_uniform_scale(bool enabled)
+{
   scale_y->set_enabled(!enabled);
 
   top_center_gizmo->y_field1 = enabled ? scale_x : scale_y;
@@ -104,14 +96,16 @@ void TransformEffect::toggle_uniform_scale(bool enabled) {
   bottom_right_gizmo->y_field1 = enabled ? nullptr : scale_y;
 }
 
-void TransformEffect::process_coords(double timecode, GLTextureCoords& coords, int) {
+void TransformEffect::process_coords(double timecode, GLTextureCoords& coords, int)
+{
   // position
-  glTranslatef(position_x->get_double_value(timecode)-(parent_clip->sequence->width()/2),
-               position_y->get_double_value(timecode)-(parent_clip->sequence->height()/2), 0);
+  glTranslatef(static_cast<GLfloat>(position_x->get_double_value(timecode) - (parent_clip->sequence->width() >> 1)),
+               static_cast<GLfloat>(position_y->get_double_value(timecode) - (parent_clip->sequence->height() >> 1)),
+               0);
 
   // anchor point
-  int anchor_x_offset = (anchor_x_box->get_double_value(timecode));
-  int anchor_y_offset = (anchor_y_box->get_double_value(timecode));
+  const int anchor_x_offset = qRound(anchor_x_box->get_double_value(timecode));
+  const int anchor_y_offset = qRound(anchor_y_box->get_double_value(timecode));
   coords.vertices_[0].x_ -= anchor_x_offset;
   coords.vertices_[1].x_ -= anchor_x_offset;
   coords.vertices_[3].x_ -= anchor_x_offset;
@@ -122,11 +116,12 @@ void TransformEffect::process_coords(double timecode, GLTextureCoords& coords, i
   coords.vertices_[2].y_ -= anchor_y_offset;
 
   // rotation
-  glRotatef(rotation->get_double_value(timecode), 0, 0, 1);
+  glRotatef(static_cast<GLfloat>(rotation->get_double_value(timecode)), 0, 0, 1);
 
   // scale
-  float sx = scale_x->get_double_value(timecode)*0.01;
-  float sy = (uniform_scale_field->get_bool_value(timecode)) ? sx : scale_y->get_double_value(timecode)*0.01;
+  const auto sx = static_cast<float>(scale_x->get_double_value(timecode) * 0.01);
+  const float sy = (uniform_scale_field->get_bool_value(timecode))
+                   ? sx : static_cast<float>(scale_y->get_double_value(timecode) * 0.01);
   glScalef(sx, sy, 1);
 
   // blend mode
@@ -144,16 +139,16 @@ void TransformEffect::process_coords(double timecode, GLTextureCoords& coords, i
       glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
       break;
     default:
-      qCritical() << "Invalid blend mode. This is a bug - please contact developers";
+      qCritical() << "Invalid blend mode.";
   }
 
   // opacity
   float color[4];
   glGetFloatv(GL_CURRENT_COLOR, color);
-  glColor4f(1.0, 1.0, 1.0, color[3]*(opacity->get_double_value(timecode)*0.01));
+  glColor4f(1.0, 1.0, 1.0, color[3] * static_cast<float>(opacity->get_double_value(timecode) * 0.01));
 }
 
-void TransformEffect::gizmo_draw(double, GLTextureCoords& coords)
+void TransformEffect::gizmo_draw(double /*timecode*/, GLTextureCoords& coords)
 {
   top_left_gizmo->world_pos[0] = QPoint(coords.vertices_[0].x_, coords.vertices_[0].y_);
   top_center_gizmo->world_pos[0] = QPoint(lerp(coords.vertices_[0].x_, coords.vertices_[1].x_, 0.5),
@@ -168,13 +163,18 @@ void TransformEffect::gizmo_draw(double, GLTextureCoords& coords)
   left_center_gizmo->world_pos[0] = QPoint(lerp(coords.vertices_[3].x_, coords.vertices_[0].x_, 0.5),
                                            lerp(coords.vertices_[3].y_, coords.vertices_[0].y_, 0.5));
 
-  rotate_gizmo->world_pos[0] = QPoint(lerp(top_center_gizmo->world_pos[0].x(), bottom_center_gizmo->world_pos[0].x(), -0.1),
-      lerp(top_center_gizmo->world_pos[0].y(), bottom_center_gizmo->world_pos[0].y(), -0.1));
+  rotate_gizmo->world_pos[0] = QPoint(lerp(top_center_gizmo->world_pos[0].x(),
+                                           bottom_center_gizmo->world_pos[0].x(),
+                                           -0.1),
+                                      lerp(bottom_center_gizmo->world_pos[0].y(),
+                                           top_center_gizmo->world_pos[0].y(),
+                                           -0.1));
 
-  rect_gizmo->world_pos[0] = QPoint(coords.vertices_[0].x_, coords.vertices_[0].y_);
-  rect_gizmo->world_pos[1] = QPoint(coords.vertices_[1].x_, coords.vertices_[1].y_);
-  rect_gizmo->world_pos[2] = QPoint(coords.vertices_[2].x_, coords.vertices_[2].y_);
-  rect_gizmo->world_pos[3] = QPoint(coords.vertices_[3].x_, coords.vertices_[3].y_);
+
+  rect_gizmo->world_pos[0] = QPoint(coords.vertices_[0].x_, coords.vertices_[0].y_); // TL
+  rect_gizmo->world_pos[1] = QPoint(coords.vertices_[1].x_, coords.vertices_[1].y_); // TR
+  rect_gizmo->world_pos[2] = QPoint(coords.vertices_[2].x_, coords.vertices_[2].y_); // BR
+  rect_gizmo->world_pos[3] = QPoint(coords.vertices_[3].x_, coords.vertices_[3].y_); // BL
 }
 
 void TransformEffect::setupUi()

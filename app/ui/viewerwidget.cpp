@@ -324,16 +324,16 @@ void ViewerWidget::context_destroy()
   doneCurrent();
 }
 
-EffectGizmoPtr ViewerWidget::get_gizmo_from_mouse(int x, int y)
+EffectGizmoPtr ViewerWidget::get_gizmo_from_mouse(const int x, const int y)
 {
   if (gizmos == nullptr) {
     return nullptr;
   }
 
   double multiplier = static_cast<double>(viewer->getSequence()->width()) / width();
-  QPoint mouse_pos(qRound(x * multiplier), qRound((height() - y) * multiplier));
-  int dot_size = 2 * qRound(GIZMO_DOT_SIZE * multiplier);
-  int target_size = 2 * qRound(GIZMO_TARGET_SIZE * multiplier);
+  const QPoint mouse_pos(qRound(x * multiplier), qRound(y * multiplier));
+  const int dot_size = 2 * qRound(GIZMO_DOT_SIZE * multiplier);
+  const int target_size = 2 * qRound(GIZMO_TARGET_SIZE * multiplier);
   for (int i = 0; i < gizmos->gizmo_count(); i++) {
     EffectGizmoPtr g = gizmos->gizmo(i);
     Q_ASSERT(g);
@@ -497,8 +497,8 @@ void ViewerWidget::draw_title_safe_area()
 {
   double halfWidth = 0.5;
   double halfHeight = 0.5;
-  double viewportAr = static_cast<double>(width()) / height();
-  double halfAr = viewportAr*0.5;
+  const double viewportAr = static_cast<double>(width()) / height();
+  const double halfAr = viewportAr * 0.5;
 
   if (global::config.use_custom_title_safe_ratio && (global::config.custom_title_safe_ratio > 0) ) {
     if (global::config.custom_title_safe_ratio > viewportAr) {
@@ -566,10 +566,10 @@ void ViewerWidget::drawDot(const EffectGizmoPtr& g) const
 {
   const float dot_size = GIZMO_DOT_SIZE / width() * viewer->getSequence()->width();
   glBegin(GL_QUADS);
-  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y()-dot_size, GIZMO_Z);
-  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y()-dot_size, GIZMO_Z);
-  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y()+dot_size, GIZMO_Z);
-  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y()+dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y() - dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y() - dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() + dot_size, g->screen_pos[0].y() + dot_size, GIZMO_Z);
+  glVertex3f(g->screen_pos[0].x() - dot_size, g->screen_pos[0].y() + dot_size, GIZMO_Z);
   glEnd();
 }
 
