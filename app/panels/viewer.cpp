@@ -128,17 +128,17 @@ bool Viewer::is_main_sequence() const noexcept
 void Viewer::set_main_sequence()
 {
   clean_created_seq();
-  set_sequence(true, global::sequence);
+  setSequence(true, global::sequence);
 }
 
 void Viewer::reset_all_audio()
 {
   // reset all clip audio
-  if (seq != nullptr) {
-    audio_ibuffer_frame = seq->playhead_;
-    audio_ibuffer_timecode = static_cast<double> (audio_ibuffer_frame) / seq->frameRate();
+  if (sequence_ != nullptr) {
+    audio_ibuffer_frame = sequence_->playhead_;
+    audio_ibuffer_timecode = static_cast<double> (audio_ibuffer_frame) / sequence_->frameRate();
 
-    for (const auto& c : seq->clips()) {
+    for (const auto& c : sequence_->clips()) {
       if (c != nullptr) {
         c->resetAudio();
       }
@@ -278,12 +278,12 @@ bool frame_rate_is_droppable(const double rate)
 
 void Viewer::seek(const int64_t p)
 {
-  if (seq == nullptr) {
+  if (sequence_ == nullptr) {
     qDebug() << "No assigned sequence";
     return;
   }
   pause();
-  seq->playhead_ = p;
+  sequence_->playhead_ = p;
   bool update_fx = false;
   if (main_sequence) {
     PanelManager::timeLine().scroll_to_frame(p);
@@ -300,15 +300,15 @@ void Viewer::seek(const int64_t p)
 
 void Viewer::go_to_start()
 {
-  if (seq != nullptr) {
+  if (sequence_ != nullptr) {
     seek(0);
   }
 }
 
 void Viewer::go_to_end()
 {
-  if (seq != nullptr) {
-    seek(seq->endFrame());
+  if (sequence_ != nullptr) {
+    seek(sequence_->endFrame());
   }
 }
 
@@ -319,11 +319,11 @@ void Viewer::close_media()
 
 void Viewer::go_to_in()
 {
-  if (seq == nullptr) {
+  if (sequence_ == nullptr) {
     return;
   }
-  if (seq->workarea_.using_ && seq->workarea_.enabled_) {
-    seek(seq->workarea_.in_);
+  if (sequence_->workarea_.using_ && sequence_->workarea_.enabled_) {
+    seek(sequence_->workarea_.in_);
   } else {
     go_to_start();
   }
@@ -331,38 +331,38 @@ void Viewer::go_to_in()
 
 void Viewer::previous_frame()
 {
-  if ((seq != nullptr) && (seq->playhead_ > 0)) {
-    seek(seq->playhead_ - 1);
+  if ((sequence_ != nullptr) && (sequence_->playhead_ > 0)) {
+    seek(sequence_->playhead_ - 1);
   }
 }
 
 
 void Viewer::previousFrameFast()
 {
-  if ( (seq != nullptr) && (seq->playhead_ > 0) ) {
-    seek(seq->playhead_ - FAST_SEEK_STEP);
+  if ( (sequence_ != nullptr) && (sequence_->playhead_ > 0) ) {
+    seek(sequence_->playhead_ - FAST_SEEK_STEP);
   }
 }
 
 void Viewer::next_frame()
 {
-  if (seq != nullptr) {
-    seek(seq->playhead_+ 1);
+  if (sequence_ != nullptr) {
+    seek(sequence_->playhead_+ 1);
   }
 }
 
 void Viewer::nextFrameFast()
 {
-  if (seq != nullptr) {
-    seek(seq->playhead_+ FAST_SEEK_STEP);
+  if (sequence_ != nullptr) {
+    seek(sequence_->playhead_+ FAST_SEEK_STEP);
   }
 }
 
 void Viewer::go_to_out()
 {
-  if (seq != nullptr) {
-    if (seq->workarea_.using_ && seq->workarea_.enabled_) {
-      seek(seq->workarea_.out_);
+  if (sequence_ != nullptr) {
+    if (sequence_->workarea_.using_ && sequence_->workarea_.enabled_) {
+      seek(sequence_->workarea_.out_);
     } else {
       go_to_end();
     }
@@ -409,9 +409,9 @@ void Viewer::play()
     PanelManager::footageViewer().pause();
   }
 
-  if (seq != nullptr) {
+  if (sequence_ != nullptr) {
     if (!is_recording_cued()
-        && seq->playhead_ >= get_seq_out()
+        && sequence_->playhead_ >= get_seq_out()
         && (global::config.loop || !main_sequence)) {
       seek(get_seq_in());
     }
@@ -421,7 +421,7 @@ void Viewer::play()
       qCritical() << "Failed to record audio";
       return;
     }
-    playhead_start = seq->playhead_;
+    playhead_start = sequence_->playhead_;
     playing = true;
     just_played = true;
     set_playpause_icon(false);
@@ -459,14 +459,14 @@ void Viewer::pause()
       PanelManager::projectViewer().process_file_list(file_list);
 
       // add it to the sequence
-      auto clp = std::make_shared<Clip>(seq);
+      auto clp = std::make_shared<Clip>(sequence_);
       auto mda = PanelManager::projectViewer().getImportedMedia(0);
       auto ftg = mda->object<Footage>();
 
       clp->timeline_info.media = mda; // latest media
       clp->timeline_info.media_stream = 0;
       clp->timeline_info.in = recording_start;
-      clp->timeline_info.out = recording_start + ftg->totalLengthInFrames(seq->frameRate());
+      clp->timeline_info.out = recording_start + ftg->totalLengthInFrames(sequence_->frameRate());
       clp->timeline_info.clip_in = 0;
       clp->timeline_info.track_ = recording_track;
       clp->timeline_info.color = PAUSE_COLOR;
@@ -474,7 +474,7 @@ void Viewer::pause()
 
       QVector<ClipPtr> add_clips;
       add_clips.append(clp);
-      e_undo_stack.push(new AddClipsCommand(seq, add_clips)); // add clip
+      e_undo_stack.push(new AddClipsCommand(sequence_, add_clips)); // add clip
     }
   }
 }
@@ -488,16 +488,16 @@ void Viewer::update_playhead_timecode(long p)
 void Viewer::update_end_timecode()
 {
   Q_ASSERT(endTimecode);
-  endTimecode->setText((seq == nullptr) ? frame_to_timecode(0, global::config.timecode_view, 30)
-                                        : frame_to_timecode(seq->activeLength(), global::config.timecode_view, seq->frameRate()));
+  endTimecode->setText((sequence_ == nullptr) ? frame_to_timecode(0, global::config.timecode_view, 30)
+                                        : frame_to_timecode(sequence_->activeLength(), global::config.timecode_view, sequence_->frameRate()));
 }
 
 void Viewer::update_header_zoom()
 {
-  if (seq == nullptr) {
+  if (sequence_ == nullptr) {
     return;
   }
-  const long sequenceEndFrame = seq->endFrame();
+  const long sequenceEndFrame = sequence_->endFrame();
   if (cached_end_frame != sequenceEndFrame) {
     minimum_zoom = (sequenceEndFrame > 0) ? ( static_cast<double>(headers->width()) / sequenceEndFrame) : 1;
     headers->update_zoom(qMax(headers->get_zoom(), minimum_zoom));
@@ -519,7 +519,7 @@ void Viewer::update_parents(bool reload_fx)
 
 void Viewer::resizeEvent(QResizeEvent *)
 {
-  if (seq != nullptr) {
+  if (sequence_ != nullptr) {
     set_sb_max();
   }
 }
@@ -527,12 +527,12 @@ void Viewer::resizeEvent(QResizeEvent *)
 
 MediaPtr Viewer::getMedia()
 {
-  return media;
+  return media_;
 }
 
 SequencePtr Viewer::getSequence()
 {
-  return seq;
+  return sequence_;
 }
 
 void Viewer::setMarker() const
@@ -546,7 +546,7 @@ void Viewer::setMarker() const
 
   if (add_marker) {
     // TODO: create a thumbnail for this
-    e_undo_stack.push(new AddMarkerAction(media->object<Footage>(), seq->playhead_, marker_name));
+    e_undo_stack.push(new AddMarkerAction(media_->object<Footage>(), sequence_->playhead_, marker_name));
   }
 }
 
@@ -568,59 +568,59 @@ void Viewer::update_viewer()
 {
   update_header_zoom();
   viewer_widget->frame_update();
-  if (seq != nullptr) {
-    update_playhead_timecode(seq->playhead_);
+  if (sequence_ != nullptr) {
+    update_playhead_timecode(sequence_->playhead_);
   }
   update_end_timecode();
 }
 
 void Viewer::clear_in()
 {
-  if (seq->workarea_.using_) {
-    e_undo_stack.push(new SetTimelineInOutCommand(seq, true, 0, seq->workarea_.out_));
+  if (sequence_->workarea_.using_) {
+    e_undo_stack.push(new SetTimelineInOutCommand(sequence_, true, 0, sequence_->workarea_.out_));
     update_parents();
   }
 }
 
 void Viewer::clear_out()
 {
-  if (seq->workarea_.using_) {
-    e_undo_stack.push(new SetTimelineInOutCommand(seq, true, seq->workarea_.in_, seq->endFrame()));
+  if (sequence_->workarea_.using_) {
+    e_undo_stack.push(new SetTimelineInOutCommand(sequence_, true, sequence_->workarea_.in_, sequence_->endFrame()));
     update_parents();
   }
 }
 
 void Viewer::clear_inout_point()
 {
-  if (seq->workarea_.using_) {
-    e_undo_stack.push(new SetTimelineInOutCommand(seq, false, 0, 0));
+  if (sequence_->workarea_.using_) {
+    e_undo_stack.push(new SetTimelineInOutCommand(sequence_, false, 0, 0));
     update_parents();
     PanelManager::projectViewer().updatePanel();
   }
 }
 
 void Viewer::toggle_enable_inout() {
-  if (seq != nullptr && seq->workarea_.using_) {
-    e_undo_stack.push(new SetBool(&seq->workarea_.enabled_, !seq->workarea_.enabled_));
+  if (sequence_ != nullptr && sequence_->workarea_.using_) {
+    e_undo_stack.push(new SetBool(&sequence_->workarea_.enabled_, !sequence_->workarea_.enabled_));
     update_parents();
   }
 }
 
 void Viewer::set_in_point()
 {
-  headers->set_in_point(seq->playhead_);
+  headers->set_in_point(sequence_->playhead_);
   PanelManager::projectViewer().updatePanel();
 }
 
 void Viewer::set_out_point()
 {
-  headers->set_out_point(seq->playhead_);
+  headers->set_out_point(sequence_->playhead_);
   PanelManager::projectViewer().updatePanel();
 }
 
 void Viewer::set_zoom(bool in)
 {
-  if (seq != nullptr) {
+  if (sequence_ != nullptr) {
     set_zoom_value(in ? headers->get_zoom() * 2 : qMax(minimum_zoom, headers->get_zoom() * 0.5));
   }
 }
@@ -641,7 +641,7 @@ void Viewer::reRender()
 
 void Viewer::update_window_title()
 {
-  const QString name(seq == nullptr  ? tr("(none)") : seq->name());
+  const QString name(sequence_ == nullptr  ? tr("(none)") : sequence_->name());
   setWindowTitle(QString("%1: %2").arg(panel_name, name));
 }
 
@@ -653,32 +653,32 @@ void Viewer::set_zoom_value(double d)
     viewer_widget->update();
   }
 
-  if (seq == nullptr) {
+  if (sequence_ == nullptr) {
     return;
   }
   set_sb_max();
   if (!horizontal_bar->is_resizing()) {
-    center_scroll_to_playhead(horizontal_bar, headers->get_zoom(), seq->playhead_);
+    center_scroll_to_playhead(horizontal_bar, headers->get_zoom(), sequence_->playhead_);
   }
 }
 
 void Viewer::set_sb_max()
 {
-  headers->set_scrollbar_max(horizontal_bar, seq->endFrame(), headers->width());
+  headers->set_scrollbar_max(horizontal_bar, sequence_->endFrame(), headers->width());
 }
 
 int64_t Viewer::get_seq_in() const
 {
-  return (seq->workarea_.using_ && seq->workarea_.enabled_)
-      ? seq->workarea_.in_
+  return (sequence_->workarea_.using_ && sequence_->workarea_.enabled_)
+      ? sequence_->workarea_.in_
       : 0;
 }
 
 int64_t Viewer::get_seq_out() const
 {
-  return (seq->workarea_.using_ && seq->workarea_.enabled_ && previous_playhead < seq->workarea_.out_)
-      ? seq->workarea_.out_
-      : seq->endFrame();
+  return (sequence_->workarea_.using_ && sequence_->workarea_.enabled_ && previous_playhead < sequence_->workarea_.out_)
+      ? sequence_->workarea_.out_
+      : sequence_->endFrame();
 }
 
 void Viewer::setup_ui()
@@ -876,29 +876,29 @@ SequencePtr Viewer::createFootageSequence(const MediaPtr& mda) const
 void Viewer::set_media(const MediaPtr& m)
 {
   main_sequence = false;
-  if (media != nullptr) {
-    if (media == m) {
+  if (media_ != nullptr) {
+    if (media_ == m) {
       // prevent assigning shared_ptr to itself
       return;
     }
   }
-  media = m;
+  media_ = m;
   clean_created_seq();
-  if (media != nullptr) {
-    switch (media->type()) {
+  if (media_ != nullptr) {
+    switch (media_->type()) {
       case MediaType::FOOTAGE:
-        seq = createFootageSequence(media);
+        sequence_ = createFootageSequence(media_);
         created_sequence = true;
         break;
       case MediaType::SEQUENCE:
-        seq = media->object<Sequence>();
+        sequence_ = media_->object<Sequence>();
         break;
       default:
-        qWarning() << "Unhandled media type" << static_cast<int>(media->type());
+        qWarning() << "Unhandled media type" << static_cast<int>(media_->type());
         break;
     }//switch
   }
-  set_sequence(false, seq);
+  setSequence(false, sequence_);
 }
 
 void Viewer::reset()
@@ -913,9 +913,9 @@ void Viewer::update_playhead()
 
 void Viewer::timer_update()
 {
-  previous_playhead = seq->playhead_;
+  previous_playhead = sequence_->playhead_;
 
-  seq->playhead_ = qRound(playhead_start + ((QDateTime::currentMSecsSinceEpoch()-start_msecs) * 0.001 * seq->frameRate()));
+  sequence_->playhead_ = qRound(playhead_start + ((QDateTime::currentMSecsSinceEpoch()-start_msecs) * 0.001 * sequence_->frameRate()));
   if (global::config.seek_also_selects) {
     PanelManager::timeLine().select_from_playhead();
   }
@@ -924,7 +924,7 @@ void Viewer::timer_update()
   const int64_t end_frame = get_seq_out();
   if (!recording
       && playing
-      && (seq->playhead_ >= end_frame)
+      && (sequence_->playhead_ >= end_frame)
       && (previous_playhead < end_frame) ) {
     if (!global::config.pause_at_out_point && global::config.loop) {
       seek(get_seq_in());
@@ -932,7 +932,7 @@ void Viewer::timer_update()
     } else if (global::config.pause_at_out_point || !main_sequence) {
       pause();
     }
-  } else if (recording && (recording_start != recording_end) && (seq->playhead_ >= recording_end) ) {
+  } else if (recording && (recording_start != recording_end) && (sequence_->playhead_ >= recording_end) ) {
     pause();
   }
 }
@@ -968,25 +968,25 @@ void Viewer::clean_created_seq()
             undo_stack.command(i)
         }*/
 
-    seq = nullptr;
+    sequence_ = nullptr;
     created_sequence = false;
   }
 }
 
-void Viewer::set_sequence(bool main, SequencePtr s)
+void Viewer::setSequence(const bool main, SequencePtr seq)
 {
   pause();
 
   reset_all_audio();
 
-  if (seq != nullptr) {
-    seq->closeActiveClips();
+  if (sequence_ != nullptr) {
+    sequence_->closeActiveClips();
   }
 
   main_sequence = main;
-  seq = main ? global::sequence : s;
+  sequence_ = main ? global::sequence : std::move(seq);
 
-  const bool null_sequence = (seq == nullptr);
+  const bool null_sequence = (sequence_ == nullptr);
 
   headers->setEnabled(!null_sequence);
   currentTimecode->setEnabled(!null_sequence);
@@ -997,13 +997,14 @@ void Viewer::set_sequence(bool main, SequencePtr s)
   btnPlay->setEnabled(!null_sequence);
   btnFastForward->setEnabled(!null_sequence);
   btnSkipToEnd->setEnabled(!null_sequence);
+  fx_mute_button_->setEnabled(!null_sequence);
 
   if (!null_sequence) {
-    currentTimecode->set_frame_rate(seq->frameRate());
+    currentTimecode->set_frame_rate(sequence_->frameRate());
 
-    playback_updater.setInterval(qFloor(1000 / seq->frameRate()));
+    playback_updater.setInterval(qFloor(1000 / sequence_->frameRate()));
 
-    update_playhead_timecode(seq->playhead_);
+    update_playhead_timecode(sequence_->playhead_);
     update_end_timecode();
 
     viewer_container->adjust();

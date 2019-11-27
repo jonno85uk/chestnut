@@ -142,8 +142,8 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
   private:
     friend class ViewerTest;
 
-    SequencePtr seq {nullptr};
-    MediaPtr media {nullptr};
+    SequencePtr sequence_ {nullptr};
+    MediaPtr media_ {nullptr};
 
     bool main_sequence {false};
     bool created_sequence {false};
@@ -175,7 +175,7 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
 
     void update_window_title();
     void clean_created_seq();
-    void set_sequence(bool main, SequencePtr s);
+    void setSequence(const bool main, SequencePtr sequence_);
     void set_zoom_value(double d);
     void set_sb_max();
 
