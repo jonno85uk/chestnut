@@ -770,7 +770,7 @@ void MainWindow::setup_menus() {
 
   file_menu->addSeparator();
 
-  file_menu->addAction(tr("E&xit"), this, SLOT(close()))->setProperty("id", "exit");
+  file_menu->addAction(tr("E&xit"), this, SLOT(close()), QKeySequence("Ctrl+Q"))->setProperty("id", "exit");
 
   // INITIALIZE EDIT MENU
 

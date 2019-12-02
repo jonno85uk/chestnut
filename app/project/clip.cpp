@@ -482,7 +482,7 @@ void Clip::closeWorker()
 
   reset();
 
-  qInfo() << "Clip closed on track" << timeline_info.track_.load();
+  qInfo() << "Clip closed on track" << timeline_info.track_.load() << "name: " << name();
 }
 
 
@@ -798,7 +798,7 @@ QVector<ClipPtr> Clip::splitAll(const long frame)
  * @brief The length in frames of the clip
  * @return
  */
-int64_t Clip::length() const
+int64_t Clip::length() const noexcept
 {
   return timeline_info.out - timeline_info.in + timeline_info.clip_in;
 }
@@ -832,7 +832,7 @@ void Clip::resetAudio()
     SequencePtr nested_sequence = timeline_info.media->object<Sequence>();
     for (const auto& clp : nested_sequence->clips()) {
       if (clp != nullptr) {
-        clp->resetAudio(); //FIXME: no recursion depth check
+        clp->resetAudio();
       }
     }
   }
@@ -901,9 +901,13 @@ TransitionPtr Clip::closingTransition() const
  */
 void Clip::frame(const long playhead, bool& texture_failed)
 {
+  qDebug() << "playhead:" << playhead << "in:" << timeline_info.in << "name:" << name();
   if (finished_opening && (media_handling_.stream_ != nullptr) ) {
-    auto ftg = timeline_info.media->object<Footage>();
-    if (!ftg) return;
+    const auto ftg = timeline_info.media->object<Footage>();
+    if (!ftg) {
+      qDebug() << "Null footage, playhead:" << playhead << "name:" << name();
+      return;
+    }
     FootageStreamPtr ms;
     if (mediaType() == ClipType::VISUAL) {
       ms = ftg->video_stream_from_file_index(timeline_info.media_stream);
@@ -911,15 +915,22 @@ void Clip::frame(const long playhead, bool& texture_failed)
       ms = ftg->audio_stream_from_file_index(timeline_info.media_stream);
     }
     if (ms == nullptr) {
+      qDebug() << "Null Footage stream, playhead:" <<playhead << "name:" << name();
       return;
     }
 
-    int64_t target_pts = qMax(static_cast<int64_t>(0), playhead_to_timestamp(playhead));
-    int64_t second_pts = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
-    if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
-      target_pts *= 2;
-      second_pts *= 2;
-    }
+
+    // I'm pretty sure the root cause is the retrieval of the wrong playhead from timestamp
+    // TODO unit-test Clip::playhead_to_timestamp
+    const auto [target_pts, second_pts] = [&] {
+      int64_t target = qMax(static_cast<int64_t>(0), playhead_to_timestamp(playhead));
+      int64_t second = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
+      if (ms->fieldOrder() != media_handling::FieldOrder::PROGRESSIVE) {
+        target *= 2;
+        second *= 2;
+      }
+      return std::make_tuple(target, second);
+    }();
 
     AVFrame* target_frame = nullptr;
 
@@ -934,14 +945,13 @@ void Clip::frame(const long playhead, bool& texture_failed)
         // correct frame may be somewhere else in the queue
         int closest_frame = 0;
 
-        for (int i=1;i<queue.size();i++) {
-          //dout << "results for" << i << qAbs(queue.at(i)->pts - target_pts) << qAbs(queue.at(closest_frame)->pts - target_pts) << queue.at(i)->pts << target_pts;
-
+        for (int i = 1; i < queue.size(); i++) {
+          Q_ASSERT(queue.at(i));
           if (queue.at(i)->pts == target_pts) {
             closest_frame = i;
             break;
           }
-          if (queue.at(i)->pts > queue.at(closest_frame)->pts && queue.at(i)->pts < target_pts) {
+          if ( (queue.at(i)->pts > queue.at(closest_frame)->pts) && (queue.at(i)->pts < target_pts) ) {
             closest_frame = i;
           }
         }
@@ -951,16 +961,17 @@ void Clip::frame(const long playhead, bool& texture_failed)
         int64_t next_pts = INT64_MAX;
         int64_t minimum_ts = target_frame->pts;
 
-        int previous_frame_count = 0;
         if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_SECONDS) {
           minimum_ts -= qFloor(second_pts * global::config.previous_queue_size);
         }
 
-        for (int i=0;i<queue.size();i++) {
-          if (queue.at(i)->pts > target_frame->pts && queue.at(i)->pts < next_pts) {
+        int previous_frame_count = 0;
+        for (int i = 0; i < queue.size(); i++) {
+          Q_ASSERT(queue.at(i));
+          if ( (queue.at(i)->pts > target_frame->pts) && (queue.at(i)->pts < next_pts) ) {
             next_pts = queue.at(i)->pts;
           }
-          if (queue.at(i) != target_frame && ((queue.at(i)->pts > minimum_ts) == timeline_info.reverse)) {
+          if ( (queue.at(i) != target_frame) && ((queue.at(i)->pts > minimum_ts) == timeline_info.reverse)) {
             if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_SECONDS) {
               av_frame_free(&queue[i]); // may be a little heavy for the main thread?
               queue.removeAt(i);
@@ -970,12 +981,13 @@ void Clip::frame(const long playhead, bool& texture_failed)
               previous_frame_count++;
             }
           }
-        }
+        }//for
 
         if (global::config.previous_queue_type == FRAME_QUEUE_TYPE_FRAMES) {
           while (previous_frame_count > qCeil(global::config.previous_queue_size)) {
             int smallest = 0;
-            for (int i=1;i<queue.size();i++) {
+            for (int i=1 ; i < queue.size(); i++) {
+              Q_ASSERT(queue.at(i));
               if (queue.at(i)->pts < queue.at(smallest)->pts) {
                 smallest = i;
               }
@@ -983,7 +995,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
             av_frame_free(&queue[smallest]);
             queue.removeAt(smallest);
             previous_frame_count--;
-          }
+          }//while
         }
 
         if (next_pts == INT64_MAX) {
@@ -991,29 +1003,27 @@ void Clip::frame(const long playhead, bool& texture_failed)
         }
 
         // we didn't get the exact timestamp
-        if (target_frame->pts != target_pts) {
-          if (target_pts > target_frame->pts && target_pts <= next_pts) {
-            //TODO: uhh
-          } else {
-            int64_t pts_diff = qAbs(target_pts - target_frame->pts);
-            if (reached_end && target_pts > target_frame->pts) {
-              reached_end = false;
-              use_cache = false;
-            } else if (target_pts != last_invalid_ts && (target_pts < target_frame->pts || pts_diff > second_pts)) {
-              if (!global::config.fast_seeking) {
-                target_frame = nullptr;
-              }
-              reset = true;
-              qInfo() << "Resetting";
-              last_invalid_ts = target_pts;
-            } else {
-              if (queue.size() >= max_queue_size) {
-                removeEarliestFromQueue();
-              }
-              ignore_reverse = true;
+        if ( (target_frame->pts != target_pts) && ( (target_pts < target_frame->pts) || (target_pts > next_pts) )) {
+          const int64_t pts_diff = qAbs(target_pts - target_frame->pts);
+          if (reached_end && target_pts > target_frame->pts) {
+            reached_end = false;
+            use_cache = false;
+          } else if (target_pts != last_invalid_ts && (target_pts < target_frame->pts || pts_diff > second_pts)) {
+            if (!global::config.fast_seeking) {
               target_frame = nullptr;
             }
+            reset = true;
+            qInfo() << "Resetting";
+            last_invalid_ts = target_pts;
+          } else {
+            if (queue.size() >= max_queue_size) {
+              removeEarliestFromQueue();
+            }
+            ignore_reverse = true;
+            target_frame = nullptr;
           }
+        } else {
+          qDebug() << "target:" << target_pts << "frame:" << target_frame->pts << "name:" << name();
         }
       }
     } else {
@@ -1027,18 +1037,18 @@ void Clip::frame(const long playhead, bool& texture_failed)
     }
 
     if (target_frame != nullptr) {
-      int nb_components = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(pix_fmt))->nb_components;
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, target_frame->linesize[0]/nb_components);
+      const int nb_components = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(pix_fmt))->nb_components;
+      glPixelStorei(GL_UNPACK_ROW_LENGTH, target_frame->linesize[0] / nb_components);
 
       bool copied = false;
       uint8_t* data = target_frame->data[0];
-      int frame_size;
+      size_t frame_size;
 
-      //      for (int i=0;i<effects.size();i++) {
       for (const auto& e : effects) {
+        Q_ASSERT(e);
         if (e->hasCapability(Capability::IMAGE)) {
           if (!copied) {
-            frame_size = target_frame->linesize[0]*target_frame->height;
+            frame_size = static_cast<size_t>(target_frame->linesize[0] * target_frame->height);
             data = new uint8_t[frame_size];
             memcpy(data, target_frame->data[0], frame_size);
             copied = true;
@@ -1048,13 +1058,16 @@ void Clip::frame(const long playhead, bool& texture_failed)
         }
       }
 
-      texture->setData(0, get_gl_pix_fmt_from_av(pix_fmt), QOpenGLTexture::UInt8, data);
+      qDebug() << "Setting data, playhead:" << playhead << "target:" << target_pts << "frame:" << target_frame->pts << "name:" << name();
+      texture->setData(0, get_gl_pix_fmt_from_av(pix_fmt), QOpenGLTexture::UInt8, static_cast<const void*>(data));
 
       if (copied) {
         delete [] data;
       }
 
       glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    } else {
+      qDebug() << "Target frame null, playhead:" << playhead << "name:" << name();
     }
 
     queue_lock.unlock();
@@ -1063,6 +1076,8 @@ void Clip::frame(const long playhead, bool& texture_failed)
     QVector<ClipPtr> empty;
     if (use_cache) {
       cache(playhead, reset, false, empty);
+    } else {
+      qDebug() << "Not using cache, playhead:" << playhead << "name:" << name();
     }
   } else {
     qWarning() << "Not finished opening";
@@ -1336,7 +1351,7 @@ bool Clip::isCreatedObject() const
 }
 
 
-long Clip::clipInWithTransition()
+long Clip::clipInWithTransition() const
 {
   if ( (transition_.opening_ != nullptr) && (transition_.opening_->secondaryClip() != nullptr) ) {
     // we must be the secondary clip, so return (timeline in - length)
@@ -1345,7 +1360,7 @@ long Clip::clipInWithTransition()
   return timeline_info.clip_in;
 }
 
-long Clip::timelineInWithTransition()
+long Clip::timelineInWithTransition() const
 {
   if ( (transition_.opening_ != nullptr) && (transition_.opening_->secondaryClip() != nullptr) ) {
     // we must be the secondary clip, so return (timeline in - length)
@@ -1354,7 +1369,8 @@ long Clip::timelineInWithTransition()
   return timeline_info.in;
 }
 
-long Clip::timelineOutWithTransition() {
+long Clip::timelineOutWithTransition() const
+{
   if ( (transition_.closing_ != nullptr) && (transition_.closing_->secondaryClip() != nullptr) ) {
     // we must be the primary clip, so return (timeline out + length2)
     return timeline_info.out + transition_.closing_->get_true_length();
@@ -1369,9 +1385,10 @@ long Clip::length()
   return timeline_info.out - timeline_info.in;
 }
 
-double Clip::mediaFrameRate() {
+double Clip::mediaFrameRate()
+{
   if (timeline_info.media != nullptr) {
-    double rate = timeline_info.media->frameRate(timeline_info.media_stream);
+    const double rate = timeline_info.media->frameRate(timeline_info.media_stream);
     if (!qIsNaN(rate)) {
       return rate;
     }
@@ -1386,10 +1403,7 @@ void Clip::recalculateMaxLength()
 {
   // TODO: calculated_length on failures
   if (sequence != nullptr) {
-    double fr = this->sequence->frameRate();
-
-    fr /= timeline_info.speed;
-
+    const double fr = sequence->frameRate() / timeline_info.speed;
     media_handling_.calculated_length_ = LONG_MAX;
 
     if (timeline_info.media != nullptr) {
@@ -1642,12 +1656,14 @@ void Clip::apply_audio_effects(const double timecode_start, AVFrame* frame, cons
 
 
 
-long Clip::playhead_to_frame(const long playhead) {
+long Clip::playhead_to_frame(const long playhead)
+{
   return (qMax(0L, playhead - timelineInWithTransition()) + clipInWithTransition());
 }
 
 
-int64_t Clip::playhead_to_timestamp(const long playhead) {
+int64_t Clip::playhead_to_timestamp(const long playhead)
+{
   return seconds_to_timestamp(playhead_to_seconds(playhead));
 }
 
@@ -1707,13 +1723,17 @@ bool Clip::retrieve_next_frame(AVFrame* frame) {
  * @param playhead
  * @return seconds
  */
-double Clip::playhead_to_seconds(const long playhead) {
+double Clip::playhead_to_seconds(const long playhead)
+{
+  Q_ASSERT(timeline_info.media);
+  Q_ASSERT(sequence);
+
   long clip_frame = playhead_to_frame(playhead);
   if (timeline_info.reverse) {
     clip_frame = maximumLength() - clip_frame - 1;
   }
-  double secs = (static_cast<double>(clip_frame)/sequence->frameRate()) * timeline_info.speed;
-  if (timeline_info.media != nullptr && timeline_info.media->type() == MediaType::FOOTAGE) {
+  double secs = (static_cast<double>(clip_frame) / sequence->frameRate()) * timeline_info.speed;
+  if (timeline_info.media->type() == MediaType::FOOTAGE) {
     secs *= timeline_info.media->object<Footage>()->speed_;
   }
   return secs;
@@ -1724,7 +1744,8 @@ int64_t Clip::seconds_to_timestamp(const double seconds)
   if (media_handling_.stream_ == nullptr) {
     return -1;
   }
-  return qRound64(seconds * av_q2d(av_inv_q(media_handling_.stream_->time_base))) + qMax(static_cast<int64_t>(0), media_handling_.stream_->start_time);
+  return qRound64(seconds * av_q2d(av_inv_q(media_handling_.stream_->time_base)))
+      + qMax(static_cast<int64_t>(0), media_handling_.stream_->start_time);
 }
 
 //TODO: hmmm
@@ -2040,116 +2061,110 @@ void Clip::cache_video_worker(const long playhead) {
     limit *= 2;
   }
 
-  if (queue.size() < limit) {
-    bool reverse = (timeline_info.reverse && !ignore_reverse);
-    ignore_reverse = false;
+  if (queue.size() >= limit) {
+    return;
+  }
+  const bool reverse = (timeline_info.reverse && !ignore_reverse);
+  ignore_reverse = false;
 
-    int64_t smallest_pts = INT64_MAX;
-    if (reverse && !queue.empty()) {
-      int64_t quarter_sec = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base))) >> 2;
-      for (auto q : queue) {
-        if (q == nullptr) {
-          qWarning() << "AVFrame instance is null";
-          continue;
+  int64_t smallest_pts = INT64_MAX;
+  if (reverse && !queue.empty()) {
+    const int64_t quarter_sec = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base))) >> 2;
+    for (const auto& q : queue) {
+      Q_ASSERT(q);
+      smallest_pts = qMin(smallest_pts, q->pts);
+    }
+    avcodec_flush_buffers(media_handling_.codec_ctx_);
+    reached_end = false;
+    const int64_t seek_ts = qMax(static_cast<int64_t>(0), smallest_pts - quarter_sec);
+    av_seek_frame(media_handling_.format_ctx_, media_handling_.stream_->index, seek_ts, AVSEEK_FLAG_BACKWARD);
+  } else {
+    smallest_pts = target_pts;
+  }
+
+  if (multithreaded && cache_info.interrupt) { // ignore interrupts for now
+    cache_info.interrupt = false;
+  }
+
+  while (true) {
+    AVFrame* frame = av_frame_alloc();
+    Q_ASSERT(frame);
+
+    while ((retr_ret = av_buffersink_get_frame(buffersink_ctx, frame)) == AVERROR(EAGAIN)) {
+      if (multithreaded && cache_info.interrupt) return; // abort
+
+      AVFrame* send_frame = media_handling_.frame_;
+      read_ret = (use_existing_frame) ? 0 : retrieve_next_frame(send_frame);
+      use_existing_frame = false;
+      if (read_ret >= 0) {
+        bool send_it = true;
+        if (send_it) {
+          if ((send_ret = av_buffersrc_add_frame_flags(buffersrc_ctx, send_frame, AV_BUFFERSRC_FLAG_KEEP_REF)) < 0) {
+            av_strerror(send_ret, err.data(), ERR_LEN);
+            qCritical() << "Failed to add frame to buffer source, msg =" << err.data();
+            av_frame_unref(media_handling_.frame_);
+            break;
+          }
         }
-        smallest_pts = qMin(smallest_pts, q->pts);
-      }
-      avcodec_flush_buffers(media_handling_.codec_ctx_);
-      reached_end = false;
-      int64_t seek_ts = qMax(static_cast<int64_t>(0), smallest_pts - quarter_sec);
-      av_seek_frame(media_handling_.format_ctx_, media_handling_.stream_->index, seek_ts, AVSEEK_FLAG_BACKWARD);
-    } else {
-      smallest_pts = target_pts;
-    }
-
-    if (multithreaded && cache_info.interrupt) { // ignore interrupts for now
-      cache_info.interrupt = false;
-    }
-
-    while (true) {
-      AVFrame* frame = av_frame_alloc();
-
-      while ((retr_ret = av_buffersink_get_frame(buffersink_ctx, frame)) == AVERROR(EAGAIN)) {
-        if (multithreaded && cache_info.interrupt) return; // abort
-
-        AVFrame* send_frame = media_handling_.frame_;
-        read_ret = (use_existing_frame) ? 0 : retrieve_next_frame(send_frame);
-        use_existing_frame = false;
-        if (read_ret >= 0) {
-          bool send_it = true;
-          if (send_it) {
-            if ((send_ret = av_buffersrc_add_frame_flags(buffersrc_ctx, send_frame, AV_BUFFERSRC_FLAG_KEEP_REF)) < 0) {
-              av_strerror(send_ret, err.data(), ERR_LEN);
-              qCritical() << "Failed to add frame to buffer source, msg =" << err.data();
-              av_frame_unref(media_handling_.frame_);
-              break;
-            }
-          }
-
-          av_frame_unref(media_handling_.frame_);
+        av_frame_unref(media_handling_.frame_);
+      } else {
+        if (read_ret == AVERROR_EOF) {
+          reached_end = true;
         } else {
-          if (read_ret == AVERROR_EOF) {
-            reached_end = true;
-          } else {
-            av_strerror(read_ret, err.data(), ERR_LEN);
-            qCritical() << "Failed to read frame, msg =" << err.data();
-          }
+          av_strerror(read_ret, err.data(), ERR_LEN);
+          qCritical() << "Failed to read frame, msg =" << err.data();
+        }
+        break;
+      }
+    }//while
+
+    if (retr_ret < 0) {
+      if (retr_ret == AVERROR_EOF) {
+        reached_end = true;
+      } else {
+        av_strerror(retr_ret, err.data(), ERR_LEN);
+        qCritical() << "Failed to retrieve frame from buffersink, msg =" << err.data();
+      }
+      av_frame_free(&frame);
+      break;
+    }
+
+    if (reverse && (( (smallest_pts == target_pts) && (frame->pts >= smallest_pts) )
+                    || ((smallest_pts != target_pts) && (frame->pts > smallest_pts)))) {
+      av_frame_free(&frame);
+      break;
+    }
+
+    // thread-safety while adding frame to the queue
+    queue_lock.lock();
+    queue.append(frame);
+
+    const auto ftg = timeline_info.media->object<Footage>();
+    if (const auto ms = ftg->video_stream_from_file_index(timeline_info.media_stream);
+        (!ms->infinite_length && (!reverse && queue.size() == limit))) {
+      // see if we got the frame we needed (used for speed ups primarily)
+      bool found = false;
+      for (const auto& q : queue) {
+        Q_ASSERT(q);
+        if (q->pts >= target_pts) {
+          found = true;
           break;
         }
       }
-
-      if (retr_ret < 0) {
-        if (retr_ret == AVERROR_EOF) {
-          reached_end = true;
-        } else {
-          av_strerror(retr_ret, err.data(), ERR_LEN);
-          qCritical() << "Failed to retrieve frame from buffersink, msg =" << err.data();
-        }
-        av_frame_free(&frame);
+      if (found) {
+        queue_lock.unlock();
         break;
       }
 
-      if (reverse && (( (smallest_pts == target_pts) && (frame->pts >= smallest_pts) )
-                      || ((smallest_pts != target_pts) && (frame->pts > smallest_pts)))) {
-        av_frame_free(&frame);
-        break;
-      }
-
-      // thread-safety while adding frame to the queue
-      queue_lock.lock();
-      queue.append(frame);
-
-      auto ftg = timeline_info.media->object<Footage>();
-      if (auto ms = ftg->video_stream_from_file_index(timeline_info.media_stream)) {
-        if (!ms->infinite_length && !reverse && queue.size() == limit) {
-          // see if we got the frame we needed (used for speed ups primarily)
-          bool found = false;
-          for (auto q : queue) {
-            if (q == nullptr) {
-              qWarning() << "AVFrame instance is null";
-              continue;
-            }
-            if (q->pts >= target_pts) {
-              found = true;
-              break;
-            }
-          }
-          if (found) {
-            queue_lock.unlock();
-            break;
-          }
-
-          // remove earliest frame and loop to store another
-          removeEarliestFromQueue();
-        }
-      }
-      queue_lock.unlock();
-
-      if (multithreaded && cache_info.interrupt) { // abort
-        return;
-      }
+      // remove earliest frame and loop to store another
+      removeEarliestFromQueue();
     }
-  }
+    queue_lock.unlock();
+
+    if (multithreaded && cache_info.interrupt) { // abort
+      return;
+    }
+  } //while
 }
 
 /**

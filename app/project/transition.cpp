@@ -59,11 +59,13 @@ void Transition::setLength(const long value)
   length_field->set_double_value(value);
 }
 
-long Transition::get_true_length() const {
+long Transition::get_true_length() const noexcept
+{
   return length;
 }
 
-long Transition::get_length() const {
+long Transition::get_length() const noexcept
+{
   if (!secondary_clip.expired()) {
     return length * 2;
   }

@@ -183,14 +183,14 @@ public:
    * @brief The length in frames of the clip
    * @return
    */
-  int64_t length() const;
+  int64_t length() const noexcept;
 
   void resetAudio();
   void reset();
   void refresh();
-  long clipInWithTransition();
-  long timelineInWithTransition();
-  long timelineOutWithTransition();
+  long clipInWithTransition() const;
+  long timelineInWithTransition() const;
+  long timelineOutWithTransition() const;
   long length();
   double mediaFrameRate();
   long maximumLength() const;
