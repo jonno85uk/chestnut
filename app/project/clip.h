@@ -67,23 +67,20 @@ enum class ClipType {
   UNKNOWN
 };
 
+
 class Clip : public project::SequenceItem,
     public std::enable_shared_from_this<Clip>,
     public project::IXMLStreamer,
     protected QThread
 {
+    Q_DISABLE_COPY_MOVE(Clip)
 public:
-
   explicit Clip(SequencePtr s);
   virtual ~Clip() override;
   ClipPtr copy(SequencePtr s);
   ClipPtr copyPreserveLinks(SequencePtr s);
 
   Clip() = delete;
-  Clip(const Clip&) = delete;
-  Clip(const Clip&&) = delete;
-  Clip& operator=(const Clip&) = delete;
-  Clip& operator=(const Clip&&) = delete;
 
   QString name() const override;
 
@@ -188,12 +185,12 @@ public:
   void resetAudio();
   void reset();
   void refresh();
-  long clipInWithTransition() const;
-  long timelineInWithTransition() const;
-  long timelineOutWithTransition() const;
-  long length();
+  long clipInWithTransition() const noexcept;
+  long timelineInWithTransition() const noexcept;
+  long timelineOutWithTransition() const noexcept;
+  long length() noexcept; //FIXME: 2 lengths
   double mediaFrameRate();
-  long maximumLength() const;
+  long maximumLength() const noexcept;
   void recalculateMaxLength();
   int width();
   int height();
@@ -216,34 +213,34 @@ public:
    */
   virtual void frame(const long playhead, bool& texture_failed);
   /**
-     * @brief get_timecode
-     * @param playhead
-     * @return
-     */
+   * @brief get_timecode
+   * @param playhead
+   * @return
+   */
   double timecode(const long playhead);
   /**
-     * @brief Identify if this clip is selected in the project's current sequence
-     * @param containing
-     * @return true==is selected
-     */
+   * @brief Identify if this clip is selected in the project's current sequence
+   * @param containing
+   * @return true==is selected
+   */
   bool isSelected(const bool containing);
   /**
-     * @brief     Identify if this clip is contained by a selection area
-     * @param sel The area selected
-     * @return    true==clip is selected
-     */
+   * @brief     Identify if this clip is contained by a selection area
+   * @param sel The area selected
+   * @return    true==clip is selected
+   */
   bool isSelected(const Selection& sel) const;
   /**
-     * @brief Identify if clip is populated at frame position (irregardless of track)
-     * @param frame position
-     * @return true if clip in range
-     */
-  bool inRange(const long frame) const; //TODO: think of a better name
+   * @brief Identify if clip is populated at frame position (irregardless of track)
+   * @param frame position
+   * @return true if clip in range
+   */
+  bool inRange(const long frame) const noexcept; //TODO: think of a better name
   /**
    * @brief Obtain this clip type
    * @return
    */
-  ClipType mediaType() const;
+  ClipType mediaType() const noexcept;
   /**
    * @brief Obtain the Media parent
    * @return MediaPtr or null
@@ -383,11 +380,11 @@ private:
 
   void apply_audio_effects(const double timecode_start, AVFrame* frame, const int nb_bytes, QVector<ClipPtr>& nests);
 
-  long playhead_to_frame(const long playhead);
-  int64_t playhead_to_timestamp(const long playhead);
-  bool retrieve_next_frame(AVFrame* frame);
-  double playhead_to_seconds(const long playhead);
-  int64_t seconds_to_timestamp(const double seconds);
+  long playhead_to_frame(const long playhead) const noexcept;
+  int64_t playhead_to_timestamp(const long playhead) const noexcept;
+  bool retrieve_next_frame(AVFrame& frame);
+  double playhead_to_seconds(const long playhead) const noexcept;
+  int64_t seconds_to_timestamp(const double seconds) const noexcept;
 
   void cache_audio_worker(const bool scrubbing, QVector<ClipPtr>& nests);
   void cache_video_worker(const long playhead);

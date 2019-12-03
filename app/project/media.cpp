@@ -298,12 +298,12 @@ void Media::updateTooltip(const QString& error)
 
 }
 
-MediaType Media::type() const 
+MediaType Media::type() const noexcept
 {
   return type_;
 }
 
-const QString &Media::name()  const
+QString Media::name() const
 {
   switch (type_) {
     case MediaType::FOOTAGE:

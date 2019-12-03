@@ -65,7 +65,7 @@ public:
     Media(const Media& cpy);
 
     template<typename T>
-    auto object() {
+    auto object() noexcept {
         return std::dynamic_pointer_cast<T>(object_);
     }
     /**
@@ -81,8 +81,8 @@ public:
     void setIcon(const QIcon &ico);
     void setParent(const MediaWPtr& p);
     void updateTooltip(const QString& error = nullptr);
-    MediaType type() const;
-    const QString& name() const;
+    virtual MediaType type() const noexcept;
+    QString name() const;
     void setName(const QString& n);
 
     double frameRate(const int32_t stream = -1);
@@ -110,6 +110,7 @@ protected:
     static int32_t nextID;
 private:
     friend class MediaTest;
+    friend class MediaTestable;
     bool root_;
     MediaType type_ = MediaType::NONE;
     project::ProjectItemPtr object_;

@@ -937,7 +937,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
     bool reset = false;
     bool use_cache = true;
 
-    queue_lock.lock();
+    QMutexLocker locker(&queue_lock);
     if (!queue.empty()) {
       if (ms->infinite_length) {
         target_frame = queue.at(0);
@@ -1069,8 +1069,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
     } else {
       qDebug() << "Target frame null, playhead:" << playhead << "name:" << name();
     }
-
-    queue_lock.unlock();
+    locker.unlock();
 
     // get more frames
     QVector<ClipPtr> empty;
@@ -1123,12 +1122,12 @@ bool Clip::isSelected(const Selection& sel) const
               || ( (timeline_info.in >= sel.out) && (timeline_info.out >= sel.out) ) ));
 }
 
-bool Clip::inRange(const long frame) const
+bool Clip::inRange(const long frame) const noexcept
 {
   return ( (timeline_info.in < frame) && (timeline_info.out > frame) );
 }
 
-ClipType Clip::mediaType() const
+ClipType Clip::mediaType() const noexcept
 {
   if (timeline_info.track_ >= 0) {
     return ClipType::AUDIO;
@@ -1351,7 +1350,7 @@ bool Clip::isCreatedObject() const
 }
 
 
-long Clip::clipInWithTransition() const
+long Clip::clipInWithTransition() const noexcept
 {
   if ( (transition_.opening_ != nullptr) && (transition_.opening_->secondaryClip() != nullptr) ) {
     // we must be the secondary clip, so return (timeline in - length)
@@ -1360,7 +1359,7 @@ long Clip::clipInWithTransition() const
   return timeline_info.clip_in;
 }
 
-long Clip::timelineInWithTransition() const
+long Clip::timelineInWithTransition() const noexcept
 {
   if ( (transition_.opening_ != nullptr) && (transition_.opening_->secondaryClip() != nullptr) ) {
     // we must be the secondary clip, so return (timeline in - length)
@@ -1369,7 +1368,7 @@ long Clip::timelineInWithTransition() const
   return timeline_info.in;
 }
 
-long Clip::timelineOutWithTransition() const
+long Clip::timelineOutWithTransition() const noexcept
 {
   if ( (transition_.closing_ != nullptr) && (transition_.closing_->secondaryClip() != nullptr) ) {
     // we must be the primary clip, so return (timeline out + length2)
@@ -1380,7 +1379,7 @@ long Clip::timelineOutWithTransition() const
 }
 
 // timeline functions
-long Clip::length()
+long Clip::length() noexcept
 {
   return timeline_info.out - timeline_info.in;
 }
@@ -1411,19 +1410,15 @@ void Clip::recalculateMaxLength()
         case MediaType::FOOTAGE:
         {
           auto ftg = timeline_info.media->object<Footage>();
-          if (ftg != nullptr) {
-            FootageStreamPtr ms;
-            if (timeline_info.isVideo()) {
-              ms = ftg->video_stream_from_file_index(timeline_info.media_stream);
-            } else {
-              ms = ftg->audio_stream_from_file_index(timeline_info.media_stream);
-            }
-
-            if (ms != nullptr && ms->infinite_length) {
-              media_handling_.calculated_length_ = LONG_MAX;
-            } else {
-              media_handling_.calculated_length_ = ftg->totalLengthInFrames(fr);
-            }
+          if (ftg == nullptr) {
+            break;
+          }
+          const auto ms = timeline_info.isVideo() ? ftg->video_stream_from_file_index(timeline_info.media_stream)
+                                                  : ftg->audio_stream_from_file_index(timeline_info.media_stream);
+          if ( (ms != nullptr) && ms->infinite_length) {
+            media_handling_.calculated_length_ = LONG_MAX;
+          } else {
+            media_handling_.calculated_length_ = ftg->totalLengthInFrames(fr);
           }
         }
           break;
@@ -1442,7 +1437,7 @@ void Clip::recalculateMaxLength()
   }
 }
 
-long Clip::maximumLength() const
+long Clip::maximumLength() const noexcept
 {
   return media_handling_.calculated_length_;
 }
@@ -1497,8 +1492,8 @@ int Clip::height() {
       if (!ftg) {
         return 0;
       }
-      const auto ms(timeline_info.isVideo() ? ftg->video_stream_from_file_index(timeline_info.media_stream)
-                                            : ftg->audio_stream_from_file_index(timeline_info.media_stream));
+      const auto ms(mediaType() == ClipType::VISUAL ? ftg->video_stream_from_file_index(timeline_info.media_stream)
+                                                    : ftg->audio_stream_from_file_index(timeline_info.media_stream));
 
       if (ms != nullptr) {
         return ms->video_height;
@@ -1656,24 +1651,25 @@ void Clip::apply_audio_effects(const double timecode_start, AVFrame* frame, cons
 
 
 
-long Clip::playhead_to_frame(const long playhead)
+long Clip::playhead_to_frame(const long playhead) const noexcept
 {
   return (qMax(0L, playhead - timelineInWithTransition()) + clipInWithTransition());
 }
 
 
-int64_t Clip::playhead_to_timestamp(const long playhead)
+int64_t Clip::playhead_to_timestamp(const long playhead) const noexcept
 {
   return seconds_to_timestamp(playhead_to_seconds(playhead));
 }
 
-bool Clip::retrieve_next_frame(AVFrame* frame) {
+bool Clip::retrieve_next_frame(AVFrame& frame)
+{
   int result = 0;
   int receive_ret;
 
   // do we need to retrieve a new packet for a new frame?
-  av_frame_unref(frame);
-  while ((receive_ret = avcodec_receive_frame(media_handling_.codec_ctx_, frame)) == AVERROR(EAGAIN)) {
+  av_frame_unref(&frame);
+  while ((receive_ret = avcodec_receive_frame(media_handling_.codec_ctx_, &frame)) == AVERROR(EAGAIN)) {
     int read_ret = 0;
     do {
       if (pkt_written) {
@@ -1723,7 +1719,7 @@ bool Clip::retrieve_next_frame(AVFrame* frame) {
  * @param playhead
  * @return seconds
  */
-double Clip::playhead_to_seconds(const long playhead)
+double Clip::playhead_to_seconds(const long playhead) const noexcept
 {
   Q_ASSERT(timeline_info.media);
   Q_ASSERT(sequence);
@@ -1739,7 +1735,7 @@ double Clip::playhead_to_seconds(const long playhead)
   return secs;
 }
 
-int64_t Clip::seconds_to_timestamp(const double seconds)
+int64_t Clip::seconds_to_timestamp(const double seconds) const noexcept
 {
   if (media_handling_.stream_ == nullptr) {
     return -1;
@@ -1749,7 +1745,8 @@ int64_t Clip::seconds_to_timestamp(const double seconds)
 }
 
 //TODO: hmmm
-void Clip::cache_audio_worker(const bool scrubbing, QVector<ClipPtr> &nests) {
+void Clip::cache_audio_worker(const bool scrubbing, QVector<ClipPtr> &nests)
+{
   long timeline_in = timelineInWithTransition();
   long timeline_out = timelineOutWithTransition();
   long target_frame = audio_playback.target_frame;
@@ -1828,7 +1825,8 @@ void Clip::cache_audio_worker(const bool scrubbing, QVector<ClipPtr> &nests) {
             int ret;
 
             while ((ret = av_buffersink_get_frame(buffersink_ctx, av_frame)) == AVERROR(EAGAIN)) {
-              ret = retrieve_next_frame(media_handling_.frame_);
+              Q_ASSERT(media_handling_.frame_);
+              ret = retrieve_next_frame(*media_handling_.frame_);
               if (ret >= 0) {
                 if ((ret = av_buffersrc_add_frame_flags(buffersrc_ctx,
                                                         media_handling_.frame_,
@@ -2048,10 +2046,11 @@ void Clip::cache_audio_worker(const bool scrubbing, QVector<ClipPtr> &nests) {
   QMetaObject::invokeMethod(&PanelManager::sequenceViewer(), "play_wake", Qt::QueuedConnection);
 }
 
-void Clip::cache_video_worker(const long playhead) {
+void Clip::cache_video_worker(const long playhead)
+{
   int read_ret, send_ret, retr_ret;
 
-  int64_t target_pts = seconds_to_timestamp(playhead_to_seconds(playhead));
+  const int64_t target_pts = seconds_to_timestamp(playhead_to_seconds(playhead));
 
   int limit = max_queue_size;
   if (ignore_reverse) {
@@ -2094,7 +2093,8 @@ void Clip::cache_video_worker(const long playhead) {
       if (multithreaded && cache_info.interrupt) return; // abort
 
       AVFrame* send_frame = media_handling_.frame_;
-      read_ret = (use_existing_frame) ? 0 : retrieve_next_frame(send_frame);
+      Q_ASSERT(send_frame);
+      read_ret = (use_existing_frame) ? 0 : retrieve_next_frame(*send_frame);
       use_existing_frame = false;
       if (read_ret >= 0) {
         bool send_it = true;
@@ -2135,8 +2135,7 @@ void Clip::cache_video_worker(const long playhead) {
       break;
     }
 
-    // thread-safety while adding frame to the queue
-    queue_lock.lock();
+    QMutexLocker locker(&queue_lock);
     queue.append(frame);
 
     const auto ftg = timeline_info.media->object<Footage>();
@@ -2152,15 +2151,14 @@ void Clip::cache_video_worker(const long playhead) {
         }
       }
       if (found) {
-        queue_lock.unlock();
+        locker.unlock();
         break;
       }
 
       // remove earliest frame and loop to store another
       removeEarliestFromQueue();
     }
-    queue_lock.unlock();
-
+    locker.unlock();
     if (multithreaded && cache_info.interrupt) { // abort
       return;
     }
@@ -2186,14 +2184,13 @@ void Clip::cache_worker(const long playhead, const bool reset, const bool scrubb
       cache_audio_worker(scrubbing, nests);
     }
   } else if (timeline_info.media->type() == MediaType::FOOTAGE) {
-    if (media_handling_.stream_ != nullptr) {
-      if (media_handling_.stream_->codecpar != nullptr) {
-        if (media_handling_.stream_->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-          cache_video_worker(playhead);
-        } else if (media_handling_.stream_->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-          cache_audio_worker(scrubbing, nests);
-        }
-      }
+    if ( (media_handling_.stream_ == nullptr) || (media_handling_.stream_->codecpar == nullptr) ) {
+      return;
+    }
+    if (media_handling_.stream_->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+      cache_video_worker(playhead);
+    } else if (media_handling_.stream_->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+      cache_audio_worker(scrubbing, nests);
     }
   }
 }
@@ -2236,9 +2233,9 @@ void Clip::reset_cache(const long target_frame) {
         clearQueue();
 
         // seeks to nearest keyframe (target_frame represents internal clip frame)
-        int64_t target_ts = seconds_to_timestamp(playhead_to_seconds(target_frame));
+        const int64_t target_ts = seconds_to_timestamp(playhead_to_seconds(target_frame));
         int64_t seek_ts = target_ts;
-        int64_t timebase_half_second = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
+        const int64_t timebase_half_second = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
         if (timeline_info.reverse) {
           seek_ts -= timebase_half_second;
         }
@@ -2252,7 +2249,8 @@ void Clip::reset_cache(const long target_frame) {
             av_seek_frame(media_handling_.format_ctx_, ms->file_index, seek_ts, AVSEEK_FLAG_BACKWARD);
 
             av_frame_unref(media_handling_.frame_);
-            int ret = retrieve_next_frame(media_handling_.frame_);
+            Q_ASSERT(media_handling_.frame_);
+            int ret = retrieve_next_frame(*media_handling_.frame_);
             if (ret < 0) {
               av_strerror(ret, err.data(), ERR_LEN);
               qCritical() << "Seeking terminated prematurely, msg =" << err.data();

@@ -69,7 +69,7 @@ class Transition : public Effect {
 
     virtual void setupUi() override;
 
-    ClipPtr secondaryClip();
+    ClipPtr secondaryClip() noexcept;
 
   private slots:
     void set_length_from_slider();

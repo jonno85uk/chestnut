@@ -240,7 +240,7 @@ int32_t Sequence::height() const
   return height_;
 }
 
-double Sequence::frameRate() const
+double Sequence::frameRate() const noexcept
 {
   return frame_rate_;
 }

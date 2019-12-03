@@ -36,6 +36,7 @@ class SequenceItem
 {
 public:
   SequenceItem();
+  virtual ~SequenceItem() {}
   explicit SequenceItem(const SequenceItemType sequenceType);
   void setName(QString name);
   virtual QString name() const;
