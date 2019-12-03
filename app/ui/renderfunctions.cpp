@@ -210,7 +210,7 @@ GLuint compose_sequence(Viewer* viewer,
 
     if (clip_is_active) {
       bool added = false;
-      for (int j=0; j<current_clips.size(); ++j) {
+      for (int j=0; j < current_clips.size(); ++j) {
         if (!current_clips.at(j)){
           qDebug() << "Clip is Null";
           continue;
@@ -228,8 +228,8 @@ GLuint compose_sequence(Viewer* viewer,
     }
   }//for
 
-  const auto half_width = lcl_seq->width()/2;
-  const auto half_height = lcl_seq->height()/2;
+  const auto half_width = lcl_seq->width() / 2;
+  const auto half_height = lcl_seq->height() / 2;
 
   if (video) {
     glPushMatrix();
@@ -387,22 +387,22 @@ GLuint compose_sequence(Viewer* viewer,
               gizmos = first_gizmo_effect;
             }
 
-            if (clp->openingTransition() != nullptr) {
+            if (auto c_t = clp->getTransition(ClipTransitionType::OPENING)) {
               const int transition_progress = playhead - clp->timelineInWithTransition();
-              if (transition_progress < clp->openingTransition()->get_length()) {
-                EffectPtr trans(clp->openingTransition());
+              if (transition_progress < c_t->get_length()) {
+                EffectPtr trans(c_t);
                 process_effect(ctx, clp, trans,
-                               static_cast<double>(transition_progress) / clp->openingTransition()->get_length(),
+                               static_cast<double>(transition_progress) / c_t->get_length(),
                                coords, composite_texture, fbo_switcher, texture_failed, TA_OPENING_TRANSITION);
               }
             }
 
-            if (clp->closingTransition() != nullptr) {
-              const int transition_progress = playhead - (clp->timelineOutWithTransition() - clp->closingTransition()->get_length());
-              if ( (transition_progress >= 0) && (transition_progress < clp->closingTransition()->get_length()) ) {
-                EffectPtr trans(clp->closingTransition());
+            if (auto c_t = clp->getTransition(ClipTransitionType::CLOSING)) {
+              const int transition_progress = playhead - (clp->timelineOutWithTransition() - c_t->get_length());
+              if ( (transition_progress >= 0) && (transition_progress < c_t->get_length()) ) {
+                EffectPtr trans(c_t);
                 process_effect(ctx, clp, trans,
-                               static_cast<double>(transition_progress) / clp->closingTransition()->get_length(),
+                               static_cast<double>(transition_progress) / c_t->get_length(),
                                coords, composite_texture, fbo_switcher, texture_failed, TA_CLOSING_TRANSITION);
               }
             }
@@ -414,6 +414,7 @@ GLuint compose_sequence(Viewer* viewer,
           }
           glViewport(0, 0, lcl_seq->width(), lcl_seq->height());
 
+          qDebug() << "playhead:" << playhead << "texture:" << composite_texture;
           glBindTexture(GL_TEXTURE_2D, composite_texture);
 
           glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -467,7 +468,6 @@ GLuint compose_sequence(Viewer* viewer,
               }//for
             }//for
           }
-
           glEnd();
 
           glBindTexture(GL_TEXTURE_2D, 0); // unbind texture
@@ -481,7 +481,7 @@ GLuint compose_sequence(Viewer* viewer,
           }
 
           if (!nests.isEmpty()) {
-            ctx->functions()->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, current_fbo);
+            ctx->functions()->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(current_fbo));
           }
 
           glPopMatrix();

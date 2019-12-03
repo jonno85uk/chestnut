@@ -586,7 +586,8 @@ void Clip::closeWithWait() {
  * @param nests
  * @return  true==cached
  */
-bool Clip::cache(const long playhead, const bool do_reset, const bool scrubbing, QVector<ClipPtr>& nests) {
+bool Clip::cache(const long playhead, const bool do_reset, const bool scrubbing, QVector<ClipPtr>& nests)
+{
   if (!usesCacher()) {
     qWarning() << "Not using caching";
     return false;
@@ -2052,13 +2053,16 @@ void Clip::cache_video_worker(const long playhead)
 
   const int64_t target_pts = seconds_to_timestamp(playhead_to_seconds(playhead));
 
-  int limit = max_queue_size;
-  if (ignore_reverse) {
-    // waiting for one frame
-    limit = queue.size() + 1;
-  } else if (timeline_info.reverse) {
-    limit *= 2;
-  }
+  const int limit = [this]{
+    int lim = max_queue_size;
+    if (ignore_reverse) {
+      // waiting for one frame
+      lim = queue.size() + 1;
+    } else if (timeline_info.reverse) {
+      lim *= 2;
+    }
+    return lim;
+  }();
 
   if (queue.size() >= limit) {
     return;
@@ -2136,6 +2140,7 @@ void Clip::cache_video_worker(const long playhead)
     }
 
     QMutexLocker locker(&queue_lock);
+    qDebug() << "Cached! playhead:" << playhead << "ts:" << frame->pts << "name:" << name();
     queue.append(frame);
 
     const auto ftg = timeline_info.media->object<Footage>();
