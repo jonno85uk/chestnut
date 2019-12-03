@@ -464,3 +464,73 @@ void ClipTest::testCaseVerifyTransitionMovedTrack()
   QVERIFY(ca.size() == 4);
 }
 
+class MediaTestable : public Media
+{
+  public:
+    MediaTestable()
+    {
+      object_ = std::make_shared<Footage>(nullptr);
+    }
+    MediaType type() const noexcept override
+    {
+      return MediaType::FOOTAGE;
+    }
+    void setSpeed(double speed)
+    {
+      std::dynamic_pointer_cast<Footage>(object_)->speed_ = speed;
+    }
+};
+
+void ClipTest::testCasePlayheadToTimestampInRange()
+{
+  auto seq = std::make_shared<Sequence>();
+  seq->setFrameRate(10);
+  auto mda = std::make_shared<MediaTestable>();
+  mda->setSpeed(1.0);
+  auto clp = std::make_shared<Clip>(seq);
+  clp->timeline_info.clip_in = 0;
+  clp->timeline_info.in = 10;
+  clp->timeline_info.out = 20;
+  clp->timeline_info.media = mda;
+  auto val = clp->playhead_to_seconds(15);
+  QCOMPARE(val, 0.5);
+  clp->timeline_info.clip_in = 5;
+  val = clp->playhead_to_seconds(15);
+  QCOMPARE(val, 1.0);
+  mda->setSpeed(0.1);
+  clp->timeline_info.clip_in = 0;
+  val = clp->playhead_to_seconds(15);
+  QCOMPARE(val, 0.05);
+}
+
+
+void ClipTest::testCasePlayheadToTimestampBeforeRange()
+{
+  auto seq = std::make_shared<Sequence>();
+  seq->setFrameRate(10);
+  auto mda = std::make_shared<MediaTestable>();
+  mda->setSpeed(1.0);
+  auto clp = std::make_shared<Clip>(seq);
+  clp->timeline_info.clip_in = 0;
+  clp->timeline_info.in = 10;
+  clp->timeline_info.out = 20;
+  clp->timeline_info.media = mda;
+  auto val = clp->playhead_to_seconds(5);
+  QCOMPARE(val, 0);
+}
+
+
+void ClipTest::testCasePlayheadToTimestampAfterRange()
+{
+  auto seq = std::make_shared<Sequence>();
+  seq->setFrameRate(10);
+  auto mda = std::make_shared<MediaTestable>();
+  mda->setSpeed(1.0);
+  auto clp = std::make_shared<Clip>(seq);
+  clp->timeline_info.clip_in = 0;
+  clp->timeline_info.in = 10;
+  clp->timeline_info.out = 20;
+  clp->timeline_info.media = mda;
+  auto val = clp->playhead_to_seconds(25);
+  QCOMPARE(val, 1.5);
+}

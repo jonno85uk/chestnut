@@ -69,6 +69,13 @@ class ClipTest : public QObject
       * @brief test when 2 clips that were side by side with a shared transition and have now moved tracks
       */
      void testCaseVerifyTransitionMovedTrack();
+     /**
+      * @brief Test returned timestamp when playhead is in clips range
+      */
+     void testCasePlayheadToTimestampInRange();
+
+     void testCasePlayheadToTimestampBeforeRange();
+     void testCasePlayheadToTimestampAfterRange();
 };
 
 #endif // CLIPTEST_H
