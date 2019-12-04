@@ -179,32 +179,22 @@ void FootageStream::onWaveformGenerated(std::string data_path)
     qWarning() << "Failed to open wavform file, path:" << data_path.c_str();
     return;
   }
+
   char data[4];
   uint32_t version, flags, rate, spp, length, channels;
-  if (file.read(data, 4) != 4) {
-    return;
-  }
-  version = convert(data, 4);
-  if (file.read(data, 4) != 4) {
-    return;
-  }
-  flags = convert(data, 4);
-  if (file.read(data, 4) != 4) {
-    return;
-  }
-  rate = convert(data, 4);
-  if (file.read(data, 4) != 4) {
-    return;
-  }
-  spp = convert(data, 4);
-  if (file.read(data, 4) != 4) {
-    return;
-  }
-  length = convert(data, 4);
-  if (file.read(data, 4) != 4) {
-    return;
-  }
-  channels = convert(data, 4);
+  auto readUint = [&]() -> uint32_t {
+    if (file.read(data, 4) != 4) {
+      std::runtime_error("Unable to read from file");
+    }
+    return convert(data, 4);
+  };
+
+  version = readUint();
+  flags = readUint();
+  rate = readUint();
+  spp = readUint();
+  length = readUint();
+  channels = readUint();
   qDebug() << "Read header";
   //TODO:
 }
