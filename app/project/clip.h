@@ -73,7 +73,6 @@ class Clip : public project::SequenceItem,
     public project::IXMLStreamer,
     protected QThread
 {
-    Q_DISABLE_COPY_MOVE(Clip)
 public:
   explicit Clip(SequencePtr s);
   virtual ~Clip() override;
@@ -81,6 +80,10 @@ public:
   ClipPtr copyPreserveLinks(SequencePtr s);
 
   Clip() = delete;
+  Clip(const Clip&) = delete;
+  Clip(const Clip&&) = delete;
+  const Clip& operator=(const Clip&) = delete;
+  const Clip& operator=(const Clip&&) = delete;
 
   QString name() const override;
 
