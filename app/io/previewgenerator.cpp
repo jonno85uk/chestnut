@@ -82,6 +82,7 @@ PreviewGenerator::PreviewGenerator(MediaPtr item, const FootagePtr& ftg, const b
   }
 
   connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+  wav_gen_ = std::make_unique<chestnut::io::AudioWaveformGenerator>();
 }
 
 PreviewGenerator::~PreviewGenerator()
@@ -400,12 +401,29 @@ QString PreviewGenerator::get_waveform_path(const QString& hash, FootageStreamPt
   return data_path + "/" + hash + "w" + QString::number(ms->file_index);
 }
 
-void generateAudioPreview()
+QString PreviewGenerator::getWaveformPath(QString file_path, const int index) const
 {
-  //TODO:
+  return QDir(data_path).filePath(generatePreviewHash(file_path) + "w" + QString::number(index));
 }
 
-void generateVideoPreview()
+void PreviewGenerator::generateAudioPreview(FootagePtr ftg, FootageStreamPtr ms)
+{
+  Q_ASSERT(ftg);
+  Q_ASSERT(ms);
+  const auto preview_path = getWaveformPath(ftg->location(), ms->file_index);
+  QFileInfo info(preview_path);
+  if (!info.exists() || (info.size() <= 0) ) {
+    wav_gen_->addToQueue(ftg->location().toStdString(),
+                         preview_path.toStdString(),
+                         ms->file_index,
+                         std::dynamic_pointer_cast<chestnut::io::IWaveformGeneratedEvent>(ms));
+    qInfo() << "Generating audio preview: path:" << ftg->location();
+  } else {
+    qDebug() << "Audio preview already exists, path:" << ftg->location();
+  }
+}
+
+void PreviewGenerator::generateVideoPreview()
 {
   //TODO:
 }
@@ -427,6 +445,17 @@ void PreviewGenerator::generateImagePreview(FootagePtr ftg)
   sem.release();
 }
 
+
+QString PreviewGenerator::generatePreviewHash(QString file_path) const
+{
+  const QFileInfo file_info(std::move(file_path));
+  const QString cache_file(file_info.fileName()
+                           + QString::number(file_info.size())
+                           + QString::number(file_info.lastModified().toMSecsSinceEpoch()));
+  const QString hash(QCryptographicHash::hash(cache_file.toUtf8(), QCryptographicHash::Md5).toHex());
+  return hash;
+}
+
 void PreviewGenerator::run()
 {
   Q_ASSERT(media != nullptr);
@@ -442,11 +471,16 @@ void PreviewGenerator::run()
       generateImagePreview(ftg);
     } else if (v_t == media_handling::StreamType::VIDEO) {
       generateVideoPreview();
+      for (auto& ms : ftg->audioTracks()) {
+        generateAudioPreview(ftg, ms);
+      }
     } else {
       qWarning() << "Unhandled visual type, fileName =" << ftg->location();
     }
   } else if (ftg->hasAudio()) {
-    generateAudioPreview();
+    for (auto& ms : ftg->audioTracks()) {
+      generateAudioPreview(ftg, ms);
+    }
   } else {
     qCritical() << "Source has no supported streams, fileName =" << ftg->location();
   }
@@ -473,11 +507,7 @@ void PreviewGenerator::run()
       parse_media();
 
       // see if we already have data for this
-      const QFileInfo file_info(ftg->location());
-      const QString cache_file(file_info.fileName()
-                               + QString::number(file_info.size())
-                               + QString::number(file_info.lastModified().toMSecsSinceEpoch()));
-      const QString hash(QCryptographicHash::hash(cache_file.toUtf8(), QCryptographicHash::Md5).toHex());
+      const auto hash = generatePreviewHash(ftg->location());
       qDebug() << "Preview hash =" << hash;
       if (!retrieve_preview(hash)) {
         av_dump_format(fmt_ctx, 0, filename, 0);

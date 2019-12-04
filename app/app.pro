@@ -13,6 +13,7 @@ TARGET = chestnut
 
 SOURCES += \
     database.cpp \
+    io/audiowaveformgenerator.cpp \
     project/objectclip.cpp \
     project/track.cpp \
     ui/Forms/effects.cpp \
@@ -128,6 +129,7 @@ HEADERS += \
     chestnut.h \
     coderconstants.h \
     database.h \
+    io/audiowaveformgenerator.h \
     project/objectclip.h \
     project/track.h \
     ui/Forms/effects.h \

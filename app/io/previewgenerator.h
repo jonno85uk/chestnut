@@ -24,6 +24,7 @@
 
 #include "project/footage.h"
 #include "project/media.h"
+#include "io/audiowaveformgenerator.h"
 
 constexpr int ICON_TYPE_VIDEO = 0;
 constexpr int ICON_TYPE_AUDIO = 1;
@@ -52,6 +53,15 @@ protected:
 signals:
     void set_icon(int, bool);
 private:
+    AVFormatContext* fmt_ctx;
+    MediaPtr media;
+    FootageWPtr footage;
+    bool contains_still_image;
+    bool replace;
+    bool cancelled;
+    QString data_path;
+    std::unique_ptr<chestnut::io::AudioWaveformGenerator> wav_gen_;
+
     void parse_media();
     /**
      * @brief retrieve pre-existing (file-system) previews
@@ -62,18 +72,16 @@ private:
     bool retrieve_preview(const QString &hash);
     void generate_waveform();
     void finalize_media();
-    AVFormatContext* fmt_ctx;
-    MediaPtr media;
-    FootageWPtr footage;
-    bool contains_still_image;
-    bool replace;
-    bool cancelled;
-    QString data_path;
     QString get_thumbnail_path(const QString &hash,  project::FootageStreamPtr& ms);
     QString get_waveform_path(const QString& hash,  project::FootageStreamPtr& ms);
+    QString getWaveformPath(QString file_path, const int index) const;
 
     bool generate_image_thumbnail(const FootagePtr& ftg) const;
     void generateImagePreview(FootagePtr ftg);
+    void generateAudioPreview(FootagePtr ftg, project::FootageStreamPtr ms);
+    void generateVideoPreview();
+
+    QString generatePreviewHash(QString file_path) const;
 };
 
 using PreviewGeneratorPtr = std::shared_ptr<PreviewGenerator>;

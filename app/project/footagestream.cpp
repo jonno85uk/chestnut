@@ -19,6 +19,8 @@
 #include "footagestream.h"
 
 #include <QPainter>
+#include <QFile>
+
 #include <mediahandling/imediastream.h>
 
 #include "debug.h"
@@ -157,6 +159,54 @@ bool FootageStream::save(QXmlStreamWriter& stream) const
       chestnut::throwAndLog("Unknown stream type. Not saving");
   }
   return false;
+}
+
+
+auto convert(char* data, int size)
+{
+  uint32_t val = 0;
+  for (auto i = 0; i < size; ++i){
+    val |= static_cast<uint8_t>(data[i]) << (i * 8);
+  }
+  return val;
+}
+
+void FootageStream::onWaveformGenerated(std::string data_path)
+{
+  qInfo() << "Reading waveform data:" << data_path.c_str();
+  QFile file(data_path.c_str());
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning() << "Failed to open wavform file, path:" << data_path.c_str();
+    return;
+  }
+  char data[4];
+  uint32_t version, flags, rate, spp, length, channels;
+  if (file.read(data, 4) != 4) {
+    return;
+  }
+  version = convert(data, 4);
+  if (file.read(data, 4) != 4) {
+    return;
+  }
+  flags = convert(data, 4);
+  if (file.read(data, 4) != 4) {
+    return;
+  }
+  rate = convert(data, 4);
+  if (file.read(data, 4) != 4) {
+    return;
+  }
+  spp = convert(data, 4);
+  if (file.read(data, 4) != 4) {
+    return;
+  }
+  length = convert(data, 4);
+  if (file.read(data, 4) != 4) {
+    return;
+  }
+  channels = convert(data, 4);
+  qDebug() << "Read header";
+  //TODO:
 }
 
 

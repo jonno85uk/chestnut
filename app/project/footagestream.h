@@ -25,6 +25,7 @@
 #include <mediahandling/imediastream.h>
 
 #include "project/ixmlstreamer.h"
+#include "io/audiowaveformgenerator.h"
 
 namespace project {
 
@@ -36,23 +37,8 @@ namespace project {
   };
 
 
-  class FootageStream : public project::IXMLStreamer {
+  class FootageStream : public project::IXMLStreamer, public chestnut::io::IWaveformGeneratedEvent {
     public:
-      FootageStream() = default;
-      FootageStream(media_handling::MediaStreamPtr stream_info);
-
-      FootageStream(const FootageStream& cpy) = delete;
-      FootageStream(const FootageStream&& cpy) = delete;
-      FootageStream& operator=(const FootageStream& rhs) = delete;
-      FootageStream& operator=(const FootageStream&& rhs) = delete;
-
-      void make_square_thumb();
-      void setStreamInfo(media_handling::MediaStreamPtr stream_info);
-      std::optional<media_handling::FieldOrder> fieldOrder() const;
-
-      virtual bool load(QXmlStreamReader& stream) override;
-      virtual bool save(QXmlStreamWriter& stream) const override;
-
       int file_index {-1};
       int video_width {-1};
       int video_height {-1};
@@ -69,6 +55,25 @@ namespace project {
       QIcon video_preview_square;
       QVector<char> audio_preview;
       media_handling::StreamType type_ {media_handling::StreamType::UNKNOWN};
+
+      FootageStream() = default;
+      FootageStream(media_handling::MediaStreamPtr stream_info);
+
+      FootageStream(const FootageStream& cpy) = delete;
+      FootageStream(const FootageStream&& cpy) = delete;
+      FootageStream& operator=(const FootageStream& rhs) = delete;
+      FootageStream& operator=(const FootageStream&& rhs) = delete;
+
+      void make_square_thumb();
+      void setStreamInfo(media_handling::MediaStreamPtr stream_info);
+      std::optional<media_handling::FieldOrder> fieldOrder() const;
+
+      virtual bool load(QXmlStreamReader& stream) override;
+      virtual bool save(QXmlStreamWriter& stream) const override;
+
+      virtual void onWaveformGenerated(std::string data_path) override;
+
+
     private:
       media_handling::MediaStreamPtr stream_info_{nullptr};
 
