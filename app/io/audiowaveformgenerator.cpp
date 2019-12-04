@@ -84,5 +84,9 @@ void AudioWaveformGenerator::generate(std::string source_path,
   const auto cmd = fmt::format(CMD_FORMAT, source_path, stream, EXTENSION, storage_path);
   qDebug() << cmd.c_str();
   system(cmd.c_str());
-  caller->onWaveformGenerated(storage_path + "." + EXTENSION);
+  if (caller) {
+    caller->onWaveformGenerated(storage_path + "." + EXTENSION);
+  } else {
+    qWarning() << "No handler for generated waveform";
+  }
 }
