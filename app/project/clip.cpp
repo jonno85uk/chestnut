@@ -1059,7 +1059,7 @@ void Clip::frame(const long playhead, bool& texture_failed)
         }
       }
 
-      qDebug() << "Setting data, playhead:" << playhead << "target:" << target_pts << "frame:" << target_frame->pts << "name:" << name();
+      qDebug() << "Setting data, playhead:" << playhead << "texture:" << texture->textureId() << "target:" << target_pts << "frame:" << target_frame->pts << "name:" << name();
       texture->setData(0, get_gl_pix_fmt_from_av(pix_fmt), QOpenGLTexture::UInt8, static_cast<const void*>(data));
 
       if (copied) {

@@ -32,64 +32,64 @@ void RenderThread::run()
     }
     queued = false;
 
-    if (share_ctx != nullptr) {
-      if (ctx != nullptr) {
-        ctx->makeCurrent(&surface);
+    if (share_ctx == nullptr) {
+      qCritical() << "Shared Context instance is NULL";
+      continue;
+    }
+    if (ctx != nullptr) {
+      ctx->makeCurrent(&surface);
 
-        // gen fbo
-        if (frameBuffer == 0) {
-          delete_fbo();
-          ctx->functions()->glGenFramebuffers(1, &frameBuffer);
+      // gen fbo
+      if (frameBuffer == 0) {
+        delete_fbo();
+        ctx->functions()->glGenFramebuffers(1, &frameBuffer);
+      }
+
+      // bind
+      ctx->functions()->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer);
+
+      if (auto sequenceNow = seq.lock()) {
+        // gen texture
+        if ( (texColorBuffer == 0) || (tex_width != sequenceNow->width()) || (tex_height != sequenceNow->height()) ) {
+          delete_texture();
+          glGenTextures(1, &texColorBuffer);
+          glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+          glTexImage2D(GL_TEXTURE_2D,
+                       0,
+                       GL_RGB,
+                       sequenceNow->width(),
+                       sequenceNow->height(),
+                       0,
+                       GL_RGB,
+                       GL_UNSIGNED_BYTE,
+                       nullptr);
+          tex_width = sequenceNow->width();
+          tex_height = sequenceNow->height();
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+          ctx->functions()->glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                                   GL_COLOR_ATTACHMENT0,
+                                                   GL_TEXTURE_2D,
+                                                   texColorBuffer,
+                                                   0);
+          glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        // bind
-        ctx->functions()->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer);
+        // draw
+        paint();
 
-        if (auto sequenceNow = seq.lock()) {
-          // gen texture
-          if ( (texColorBuffer == 0) || (tex_width != sequenceNow->width()) || (tex_height != sequenceNow->height()) ) {
-            delete_texture();
-            glGenTextures(1, &texColorBuffer);
-            glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-            glTexImage2D(GL_TEXTURE_2D,
-                         0,
-                         GL_RGB,
-                         sequenceNow->width(),
-                         sequenceNow->height(),
-                         0,
-                         GL_RGB,
-                         GL_UNSIGNED_BYTE,
-                         nullptr);
-            tex_width = sequenceNow->width();
-            tex_height = sequenceNow->height();
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            ctx->functions()->glFramebufferTexture2D(GL_FRAMEBUFFER,
-                                                     GL_COLOR_ATTACHMENT0,
-                                                     GL_TEXTURE_2D,
-                                                     texColorBuffer,
-                                                     0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-          }
+        // flush changes
+        glFinish();
 
-          // draw
-          paint();
+        // release
+        ctx->functions()->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-          // flush changes
-          glFinish();
-
-          // release
-          ctx->functions()->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-          emit ready();
-        } else {
-          qCritical() << "Sequence instance is NULL";
-        }
+        emit ready();
       } else {
-        qCritical() << "Context instance is NULL";
+        qCritical() << "Sequence instance is NULL";
       }
     } else {
-      qCritical() << "Shared Context instance is NULL";
+      qCritical() << "Context instance is NULL";
     }
   }
 
