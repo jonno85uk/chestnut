@@ -29,10 +29,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-namespace {
-  GLuint last_texture_id = 0;
-}
-
 #define GL_DEFAULT_BLEND glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE)
 
 GLuint draw_clip(QOpenGLContext& ctx, QOpenGLFramebufferObject* fbo, const GLuint texture, const bool clear)
@@ -310,11 +306,6 @@ void renderClip(ClipPtr& clp, const int64_t playhead, const GLint current_fbo, V
       }
       glViewport(0, 0, seq->width(), seq->height());
 
-      qDebug() << "playhead:" << playhead << "texture:" << composite_texture;
-      if (last_texture_id != composite_texture) {
-        qDebug() << "Texture changed" << last_texture_id << ">>" << composite_texture;
-        last_texture_id = composite_texture;
-      }
       glBindTexture(GL_TEXTURE_2D, composite_texture);
 
       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

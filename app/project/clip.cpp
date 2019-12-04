@@ -902,7 +902,6 @@ TransitionPtr Clip::closingTransition() const
  */
 void Clip::frame(const long playhead, bool& texture_failed)
 {
-  qDebug() << "playhead:" << playhead << "in:" << timeline_info.in << "name:" << name();
   if (finished_opening && (media_handling_.stream_ != nullptr) ) {
     const auto ftg = timeline_info.media->object<Footage>();
     if (!ftg) {
@@ -920,9 +919,6 @@ void Clip::frame(const long playhead, bool& texture_failed)
       return;
     }
 
-
-    // I'm pretty sure the root cause is the retrieval of the wrong playhead from timestamp
-    // TODO unit-test Clip::playhead_to_timestamp
     const auto [target_pts, second_pts] = [&] {
       int64_t target = qMax(static_cast<int64_t>(0), playhead_to_timestamp(playhead));
       int64_t second = qRound64(av_q2d(av_inv_q(media_handling_.stream_->time_base)));
@@ -1024,7 +1020,6 @@ void Clip::frame(const long playhead, bool& texture_failed)
             target_frame = nullptr;
           }
         } else {
-          qDebug() << "target:" << target_pts << "frame:" << target_frame->pts << "name:" << name();
         }
       }
     } else {
@@ -1059,7 +1054,6 @@ void Clip::frame(const long playhead, bool& texture_failed)
         }
       }
 
-      qDebug() << "Setting data, playhead:" << playhead << "texture:" << texture->textureId() << "target:" << target_pts << "frame:" << target_frame->pts << "name:" << name();
       texture->setData(0, get_gl_pix_fmt_from_av(pix_fmt), QOpenGLTexture::UInt8, static_cast<const void*>(data));
 
       if (copied) {
@@ -2140,7 +2134,6 @@ void Clip::cache_video_worker(const long playhead)
     }
 
     QMutexLocker locker(&queue_lock);
-    qDebug() << "Cached! playhead:" << playhead << "ts:" << frame->pts << "name:" << name();
     queue.append(frame);
 
     const auto ftg = timeline_info.media->object<Footage>();

@@ -571,7 +571,6 @@ bool Viewer::usingEffects() const
 
 void Viewer::update_viewer()
 {
-  qDebug() << "Update viewer";
   update_header_zoom();
   viewer_widget->frame_update();
   // FIXME: doing x2 frame updates resolves Issue#32. Need to find out why!
