@@ -28,9 +28,10 @@
 using chestnut::io::AudioWaveformGenerator;
 
 constexpr auto EXTENSION = "dat";
+constexpr auto PIXELS_PER_SECOND = 100;
 #ifdef __linux__
 constexpr auto CMD_FORMAT = "ffmpeg -i \"{0}\" -map 0:{1} -f wav - | audiowaveform --input-format wav --output-format {2} -b 8 "
-                            "--split-channels -o \"{3}.{2}\"";
+                            "--split-channels --pixels-per-second {3} -o \"{4}\" &>/dev/null";
 #elif _WIN64
 //TODO:
 constexpr auto CMD_FORMAT = "";
@@ -81,11 +82,11 @@ void AudioWaveformGenerator::generate(std::string source_path,
                                       WGEPtr caller) const
 {
 
-  const auto cmd = fmt::format(CMD_FORMAT, source_path, stream, EXTENSION, storage_path);
+  const auto cmd = fmt::format(CMD_FORMAT, source_path, stream, EXTENSION, PIXELS_PER_SECOND, storage_path);
   qDebug() << cmd.c_str();
   system(cmd.c_str());
   if (caller) {
-    caller->onWaveformGenerated(storage_path + "." + EXTENSION);
+    caller->onWaveformGenerated(storage_path);
   } else {
     qWarning() << "No handler for generated waveform";
   }

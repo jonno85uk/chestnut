@@ -37,7 +37,8 @@ namespace project {
   };
 
 
-  class FootageStream : public project::IXMLStreamer, public chestnut::io::IWaveformGeneratedEvent {
+  class FootageStream : public project::IXMLStreamer, public chestnut::io::IWaveformGeneratedEvent
+  {
     public:
       int file_index {-1};
       int video_width {-1};
@@ -54,6 +55,7 @@ namespace project {
       QImage video_preview;
       QIcon video_preview_square;
       QVector<char> audio_preview;
+      unsigned spp {};
       media_handling::StreamType type_ {media_handling::StreamType::UNKNOWN};
 
       FootageStream() = default;
@@ -73,11 +75,12 @@ namespace project {
 
       virtual void onWaveformGenerated(std::string data_path) override;
 
-
     private:
       media_handling::MediaStreamPtr stream_info_{nullptr};
+      chestnut::io::WaveformInfo waveform_info_;
 
       void initialise(const media_handling::IMediaStream& stream);
+
   };
   using FootageStreamPtr = std::shared_ptr<FootageStream>;
   using FootageStreamWPtr = std::weak_ptr<FootageStream>;

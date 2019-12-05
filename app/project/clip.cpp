@@ -1061,8 +1061,6 @@ void Clip::frame(const long playhead, bool& texture_failed)
       }
 
       glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    } else {
-      qDebug() << "Target frame null, playhead:" << playhead << "name:" << name();
     }
     locker.unlock();
 

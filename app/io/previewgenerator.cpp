@@ -128,33 +128,9 @@ bool PreviewGenerator::retrieve_preview(const QString& hash)
     }
   } //for
 
-  for (auto& stream: ftg->audioTracks()) {
-    auto waveform_path = get_waveform_path(hash, stream);
-    QFile f(waveform_path);
-    if (f.exists()) {
-      f.open(QFile::ReadOnly);
-      auto data = f.readAll();
-      stream->audio_preview.resize(data.size());
-      for (int j=0;j<data.size();j++) {
-        // faster way?
-        stream->audio_preview[j] = data.at(j);
-      }
-      stream->preview_done = true;
-      f.close();
-    } else {
-      found = false;
-      break;
-    }
-  } //for
-
   if (!found) {
     for (const auto& stream: ftg->videoTracks()) {
       Q_ASSERT(stream);
-      stream->preview_done = false;
-    }
-    for (const auto& stream: ftg->audioTracks()) {
-      Q_ASSERT(stream);
-      stream->audio_preview.clear();
       stream->preview_done = false;
     }
   }
@@ -285,65 +261,7 @@ void PreviewGenerator::generate_waveform()
             }
             media_lengths.at(packet->stream_index)++;
           } else if (streams[packet->stream_index]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            const auto interval = qFloor((temp_frame->sample_rate/WAVEFORM_RESOLUTION)/4)*4;
-            AVFrame* swr_frame = av_frame_alloc();
-            Q_ASSERT(swr_frame);
-            swr_frame->channel_layout   = temp_frame->channel_layout;
-            swr_frame->sample_rate      = temp_frame->sample_rate;
-            swr_frame->format           = AV_SAMPLE_FMT_S16P;
-
-            swr_ctx = swr_alloc_set_opts(
-                        nullptr,
-                        temp_frame->channel_layout,
-                        static_cast<AVSampleFormat>(swr_frame->format),
-                        temp_frame->sample_rate,
-                        temp_frame->channel_layout,
-                        static_cast<AVSampleFormat>(temp_frame->format),
-                        temp_frame->sample_rate,
-                        0,
-                        nullptr
-                        );
-
-            swr_init(swr_ctx);
-
-            swr_convert_frame(swr_ctx, swr_frame, temp_frame);
-
-            // TODO: implement a way to terminate this if the user suddenly closes the project while the waveform is being generated
-            const auto sample_size = av_get_bytes_per_sample(static_cast<AVSampleFormat>(swr_frame->format));
-            const auto nb_bytes = swr_frame->nb_samples * sample_size;
-            const auto byte_interval = interval * sample_size;
-            for (int i = 0; i < nb_bytes; i += byte_interval) {
-              for (int j = 0; j < swr_frame->channels; ++j) {
-                qint16 min = 0;
-                qint16 max = 0;
-                for (int k = 0; k < byte_interval; k += sample_size) {
-                  if ( (i + k) < nb_bytes) {
-                    const qint16 sample = ((gsl::at(swr_frame->data, j)[i + k + 1] << 8) | gsl::at(swr_frame->data, j)[i + k]);
-                    if (sample > max) {
-                      max = sample;
-                    } else if (sample < min) {
-                      min = sample;
-                    }
-                  } else {
-                    break;
-                  }
-                }
-                ms->audio_preview.append(min >> 8);
-                ms->audio_preview.append(max >> 8);
-                if (cancelled) {
-                  break;
-                }
-              }
-            }//for
-
-            swr_free(&swr_ctx);
-            av_frame_unref(swr_frame);
-            av_frame_free(&swr_frame);
-
-            if (cancelled) {
-              end_of_file = true; //FIXME: never used
-              break;
-            }
+            // Do nothing
           } else {
             qWarning() << "Unhandled stream type" << streams[static_cast<size_t>(packet->stream_index)]->codecpar->codec_type;
           }
@@ -368,13 +286,6 @@ void PreviewGenerator::generate_waveform()
         av_packet_unref(packet);
       }
     }//while
-
-    for (const auto& stream : ftg->audioTracks()) {
-      if (!stream) {
-        continue;
-      }
-      stream->preview_done = true;
-    }
 
     av_frame_free(&temp_frame);
     av_packet_free(&packet);
@@ -420,6 +331,7 @@ void PreviewGenerator::generateAudioPreview(FootagePtr ftg, FootageStreamPtr ms)
     qInfo() << "Generating audio preview: path:" << ftg->location();
   } else {
     qDebug() << "Audio preview already exists, path:" << ftg->location();
+    ms->onWaveformGenerated(preview_path.toStdString());
   }
 }
 
@@ -456,6 +368,8 @@ QString PreviewGenerator::generatePreviewHash(QString file_path) const
   return hash;
 }
 
+
+// TODO: make the Footage class responsible for creating its previews
 void PreviewGenerator::run()
 {
   Q_ASSERT(media != nullptr);
@@ -526,17 +440,6 @@ void PreviewGenerator::run()
             qWarning() << "Video Preview did not save." << thumbPath;
           }
         }
-
-        for (auto& ms : ftg->audioTracks()) {
-          Q_ASSERT(ms);
-          QFile f(get_waveform_path(hash, ms));
-          f.open(QFile::WriteOnly);
-          if (f.write(ms->audio_preview.constData(), ms->audio_preview.size()) < 0) {
-            qWarning() << "Error occurred on write of waveform preview";
-          }
-          f.close();
-        }
-
         sem.release();
       }
     }

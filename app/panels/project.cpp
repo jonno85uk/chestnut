@@ -36,6 +36,7 @@
 #include <QStandardPaths>
 #include <mediahandling/mediahandling.h>
 #include <regex>
+#include <fmt/core.h>
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -83,7 +84,7 @@ constexpr int THROBBER_SIZE           = 50;
 constexpr int MIN_WIDTH = 320;
 
 constexpr auto VIDEO_FMT_FILTER = "*.avi *.m4v *.mkv *.mov *.mp4 *.mts *.mxf *.ogv *.webm *.wmv";
-constexpr auto AUDIO_FMT_FILTER = "*.aac *.aif *.alac *.flac *.m4a *.mp3 *.ogg *.wav *.wma";
+constexpr auto AUDIO_FMT_FILTER = "*.aac *.ac3 *.aif *.alac *.flac *.m4a *.mp3 *.ogg *.wav *.wma";
 constexpr auto IMAGE_FMT_FILTER = "*.bmp *.dpx *.exr *.jp2 *.jpeg *.jpg *.png *.tga *.tif *.tiff *.webp";
 constexpr auto TMP_SAVE_FILENAME = "tmpsave.nut";
 
@@ -441,6 +442,7 @@ void Project::get_all_media_from_table(QVector<MediaPtr>& items, QVector<MediaPt
 void Project::refresh()
 {
   for (const auto& item : model_->items()) {
+    // TODO: add an item to the PreviewGenerator queue
     start_preview_generator(item, true);
   }
 }
@@ -750,6 +752,7 @@ void Project::process_file_list(QStringList& files, bool recursive, MediaPtr rep
 
       for (MediaPtr& mda : last_imported_media){
         // generate waveform/thumbnail in another thread
+        // TODO: add item to queue
         start_preview_generator(mda, replace != nullptr);
       }
     } else {

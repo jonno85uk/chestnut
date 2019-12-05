@@ -173,7 +173,7 @@ auto convert(char* data, int size)
 
 void FootageStream::onWaveformGenerated(std::string data_path)
 {
-  qInfo() << "Reading waveform data:" << data_path.c_str();
+  qInfo() << "Reading waveform data, file_path:" << data_path.c_str();
   QFile file(data_path.c_str());
   if (!file.open(QIODevice::ReadOnly)) {
     qWarning() << "Failed to open wavform file, path:" << data_path.c_str();
@@ -181,22 +181,40 @@ void FootageStream::onWaveformGenerated(std::string data_path)
   }
 
   char data[4];
-  uint32_t version, flags, rate, spp, length, channels;
   auto readUint = [&]() -> uint32_t {
     if (file.read(data, 4) != 4) {
-      std::runtime_error("Unable to read from file");
+      throw std::runtime_error("Unable to read from file");
     }
     return convert(data, 4);
   };
 
-  version = readUint();
-  flags = readUint();
-  rate = readUint();
-  spp = readUint();
-  length = readUint();
-  channels = readUint();
-  qDebug() << "Read header";
-  //TODO:
+  waveform_info_.version_ = readUint();
+  if (waveform_info_.version_ < 2){
+    qCritical() << "audiowaveform version is not supported";
+    return;
+  }
+  waveform_info_.flags_ = readUint();
+  waveform_info_.rate_ = readUint();
+  waveform_info_.samples_per_pixel_= readUint();
+  waveform_info_.length_ = readUint();
+  waveform_info_.channels_ = readUint();
+
+  // TODO: identify what to do about 16bit sampling
+  const size_t datasize = [&] {
+    size_t sz = waveform_info_.length_ * waveform_info_.channels_ * 2;
+    if ((waveform_info_.flags_ & 0x1) == 0) {
+      // 16bit values
+      sz *= 2;
+    }
+    return sz;
+  }();
+
+  audio_preview.clear();
+  QByteArray samples = file.read(datasize);
+  for (const auto& samp: samples) {
+    audio_preview.push_back(samp);
+  }
+  preview_done = true;
 }
 
 

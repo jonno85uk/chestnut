@@ -2713,17 +2713,18 @@ void draw_waveform(ClipPtr& clip, const FootageStreamPtr& ms, const long media_l
                    const int waveform_start, const int waveform_limit, const double zoom)
 {
   //FIXME: magic numbers in function
-  auto divider = ms->audio_channels*2;
-  auto channel_height = clip_rect.height()/ms->audio_channels;
+  const auto divider = ms->audio_channels * 2;
+  const auto channel_height = clip_rect.height() / ms->audio_channels;
 
-  for (auto i=waveform_start; i<waveform_limit; ++i) {
-    auto waveform_index = qFloor((((clip->timeline_info.clip_in + (static_cast<double>(i)/zoom))/media_length) * ms->audio_preview.size())/divider)*divider;
+  for (auto i = waveform_start; i < waveform_limit; ++i) {
+    auto waveform_index = qFloor( ( ( (clip->timeline_info.clip_in + (static_cast<double>(i)/zoom)) / media_length)
+                                   * ms->audio_preview.size() ) / divider) * divider;
 
     if (clip->timeline_info.reverse) {
       waveform_index = ms->audio_preview.size() - waveform_index - (ms->audio_channels * 2);
     }
 
-    for (auto j=0; j<ms->audio_channels; ++j) {
+    for (auto j=0; j < ms->audio_channels; ++j) {
       auto mid = (global::config.rectified_waveforms) ? clip_rect.top()+channel_height*(j+1) : clip_rect.top()+channel_height*j+(channel_height/2);
       auto offset = waveform_index+(j*2);
       Q_ASSERT(offset >= 0);
@@ -2733,14 +2734,12 @@ void draw_waveform(ClipPtr& clip, const FootageStreamPtr& ms, const long media_l
         const auto max = static_cast<double>(ms->audio_preview.at(offset+1)) / 128.0 * (channel_height/2);
 
         if (global::config.rectified_waveforms)  {
-          p.drawLine(clip_rect.left()+i, mid, clip_rect.left()+i, mid - (max - min));
+          p.drawLine(clip_rect.left() + i, mid, clip_rect.left() + i, mid - (max - min));
         } else {
-          p.drawLine(clip_rect.left()+i, mid+min, clip_rect.left()+i, mid+max);
+          p.drawLine(clip_rect.left() + i, mid + min, clip_rect.left() + i, mid + max);
         }
-      }/* else {
-                qWarning() << "Tried to reach" << offset + 1 << ", limit:" << ms.audio_preview.size();
-            }*/
-    }
+      }
+    }//for
   }
 }
 

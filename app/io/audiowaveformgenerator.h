@@ -28,6 +28,16 @@
 
 namespace chestnut::io
 {
+  struct WaveformInfo
+  {
+      uint32_t version_ {};
+      uint32_t flags_ {};
+      uint32_t rate_ {};
+      uint32_t samples_per_pixel_ {};
+      uint32_t length_ {};
+      uint32_t channels_ {};
+  };
+
   class IWaveformGeneratedEvent
   {
     public:

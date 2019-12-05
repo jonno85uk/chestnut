@@ -39,7 +39,8 @@ using FootagePtr = std::shared_ptr<Footage>;
 using FootageWPtr = std::weak_ptr<Footage>;
 
 
-class Footage : public std::enable_shared_from_this<Footage>, public project::ProjectItem {
+class Footage : public std::enable_shared_from_this<Footage>, public project::ProjectItem
+{
   public:
     int64_t length_{0};
 
@@ -62,6 +63,8 @@ class Footage : public std::enable_shared_from_this<Footage>, public project::Pr
     explicit Footage(const std::shared_ptr<Media>& parent);
     Footage(QString url, const std::shared_ptr<Media>& parent, const bool import_as_sequence=false);
     Footage(const Footage& cpy);
+
+    bool generatePreviews();
 
     /**
      * @brief Identify if the Footage is missing its source file

@@ -148,15 +148,13 @@ void Footage::parseStreams()
 
   video_tracks.clear();
   for (auto[key, stream] : media_source_->visualStreams()) {
-    auto ftg_stream = std::make_shared<project::FootageStream>(stream);
-    video_tracks.insert(key, ftg_stream);
+    video_tracks.insert(key, std::make_shared<project::FootageStream>(stream));
   }
 
   audio_tracks.clear();
 
   for (auto[key, stream] : media_source_->audioStreams()) {
-    auto ftg_stream = std::make_shared<project::FootageStream>(stream);
-    audio_tracks.insert(key, ftg_stream);
+    audio_tracks.insert(key, std::make_shared<project::FootageStream>(stream));
   }
 
   bool is_okay = false;
@@ -355,6 +353,12 @@ constexpr long lengthToFrames(const int64_t length, const double frame_rate, con
                                          * (frame_rate / speed) ));
   }
   return 0;
+}
+
+bool Footage::generatePreviews()
+{
+  //TODO: iterate through streams generating previews for each
+  return false;
 }
 
 bool Footage::isMissing() const noexcept
