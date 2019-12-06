@@ -13,8 +13,8 @@ TARGET = chestnut
 
 SOURCES += \
     database.cpp \
-    io/audiowaveformgenerator.cpp \
     project/objectclip.cpp \
+    project/previewgeneratorthread.cpp \
     project/track.cpp \
     ui/Forms/effects.cpp \
     ui/Forms/subclipcreatedialog.cpp \
@@ -45,7 +45,6 @@ SOURCES += \
     ui/collapsiblewidget.cpp \
     io/exportthread.cpp \
     ui/timelineheader.cpp \
-    io/previewgenerator.cpp \
     ui/labelslider.cpp \
     dialogs/preferencesdialog.cpp \
     ui/audiomonitor.cpp \
@@ -129,8 +128,8 @@ HEADERS += \
     chestnut.h \
     coderconstants.h \
     database.h \
-    io/audiowaveformgenerator.h \
     project/objectclip.h \
+    project/previewgeneratorthread.h \
     project/track.h \
     ui/Forms/effects.h \
     ui/Forms/subclipcreatedialog.h \
@@ -162,7 +161,6 @@ HEADERS += \
     ui/collapsiblewidget.h \
     io/exportthread.h \
     ui/timelineheader.h \
-    io/previewgenerator.h \
     ui/labelslider.h \
     dialogs/preferencesdialog.h \
     ui/audiomonitor.h \

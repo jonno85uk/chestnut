@@ -82,7 +82,6 @@ PreviewGenerator::PreviewGenerator(MediaPtr item, const FootagePtr& ftg, const b
   }
 
   connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
-  wav_gen_ = std::make_unique<chestnut::io::AudioWaveformGenerator>();
 }
 
 PreviewGenerator::~PreviewGenerator()
@@ -120,7 +119,7 @@ bool PreviewGenerator::retrieve_preview(const QString& hash)
     const auto thumb_path(get_thumbnail_path(hash, stream));
     QFile f(thumb_path);
     if (f.exists() && stream->video_preview.load(thumb_path)) {
-      stream->make_square_thumb();
+//      stream->make_square_thumb();
       stream->preview_done = true;
     } else {
       found = false;
@@ -251,7 +250,7 @@ void PreviewGenerator::generate_waveform()
               sws_scale(sws_ctx, temp_frame->data, temp_frame->linesize, 0, temp_frame->height, &imgData, linesize);
 
               ms->video_preview = QImage(imgData, dstW, PREVIEW_HEIGHT, linesize[0], QImage::Format_RGBA8888, thumb_data_cleanup);
-              ms->make_square_thumb();
+//              ms->make_square_thumb();
               ms->preview_done = true;
 
               sws_freeContext(sws_ctx);
@@ -307,10 +306,6 @@ QString PreviewGenerator::get_thumbnail_path(const QString& hash, FootageStreamP
   return data_path + "/" + hash + "t" + QString::number(ms->file_index);
 }
 
-QString PreviewGenerator::get_waveform_path(const QString& hash, FootageStreamPtr& ms)
-{
-  return data_path + "/" + hash + "w" + QString::number(ms->file_index);
-}
 
 QString PreviewGenerator::getWaveformPath(QString file_path, const int index) const
 {
@@ -319,20 +314,7 @@ QString PreviewGenerator::getWaveformPath(QString file_path, const int index) co
 
 void PreviewGenerator::generateAudioPreview(FootagePtr ftg, FootageStreamPtr ms)
 {
-  Q_ASSERT(ftg);
-  Q_ASSERT(ms);
-  const auto preview_path = getWaveformPath(ftg->location(), ms->file_index);
-  QFileInfo info(preview_path);
-  if (!info.exists() || (info.size() <= 0) ) {
-    wav_gen_->addToQueue(ftg->location().toStdString(),
-                         preview_path.toStdString(),
-                         ms->file_index,
-                         std::dynamic_pointer_cast<chestnut::io::IWaveformGeneratedEvent>(ms));
-    qInfo() << "Generating audio preview: path:" << ftg->location();
-  } else {
-    qDebug() << "Audio preview already exists, path:" << ftg->location();
-    ms->onWaveformGenerated(preview_path.toStdString());
-  }
+
 }
 
 void PreviewGenerator::generateVideoPreview()
@@ -464,7 +446,7 @@ bool PreviewGenerator::generate_image_thumbnail(const FootagePtr& ftg) const
     ms->enabled           = true;
     ms->file_index        = 0;
     ms->video_preview     = img.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
-    ms->make_square_thumb();
+//    ms->make_square_thumb();
     ms->preview_done      = true;
     ms->video_height      = img.height();
     ms->video_width       = img.width();

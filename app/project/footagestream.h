@@ -25,7 +25,6 @@
 #include <mediahandling/imediastream.h>
 
 #include "project/ixmlstreamer.h"
-#include "io/audiowaveformgenerator.h"
 
 namespace project {
 
@@ -37,7 +36,7 @@ namespace project {
   };
 
 
-  class FootageStream : public project::IXMLStreamer, public chestnut::io::IWaveformGeneratedEvent
+  class FootageStream : public project::IXMLStreamer
   {
     public:
       int file_index {-1};
@@ -55,33 +54,59 @@ namespace project {
       QImage video_preview;
       QIcon video_preview_square;
       QVector<char> audio_preview;
-      unsigned spp {};
       media_handling::StreamType type_ {media_handling::StreamType::UNKNOWN};
 
       FootageStream() = default;
-      FootageStream(media_handling::MediaStreamPtr stream_info);
+      FootageStream(media_handling::MediaStreamPtr stream_info, QString source_path, const bool is_audio);
 
       FootageStream(const FootageStream& cpy) = delete;
       FootageStream(const FootageStream&& cpy) = delete;
       FootageStream& operator=(const FootageStream& rhs) = delete;
       FootageStream& operator=(const FootageStream&& rhs) = delete;
 
-      void make_square_thumb();
+      bool generatePreview();
+
+      void makeSquareThumb(const int width, const int height);
       void setStreamInfo(media_handling::MediaStreamPtr stream_info);
       std::optional<media_handling::FieldOrder> fieldOrder() const;
 
       virtual bool load(QXmlStreamReader& stream) override;
       virtual bool save(QXmlStreamWriter& stream) const override;
 
-      virtual void onWaveformGenerated(std::string data_path) override;
 
     private:
+      struct WaveformInfo
+      {
+          uint32_t version_ {};
+          uint32_t flags_ {};
+          uint32_t rate_ {};
+          uint32_t samples_per_pixel_ {};
+          uint32_t length_ {};
+          uint32_t channels_ {};
+      } waveform_info_;
       media_handling::MediaStreamPtr stream_info_{nullptr};
-      chestnut::io::WaveformInfo waveform_info_;
+      QString data_path;
+      QString source_path_;
+      bool audio_ {false};
 
       void initialise(const media_handling::IMediaStream& stream);
 
+      bool generateVisualPreview();
+      bool generateAudioPreview();
+      QString previewHash() const;
+      QString thumbnailPath() const;
+      QString waveformPath() const;
+      void imagePreview();
+      void videoPreview();
+      /**
+       * @brief           Load a waveform file formatted using bbc/audiowaveform structure
+       * @param data_path Location of waveform file to load
+       * @return          true==success
+       */
+      bool loadWaveformFile(const QString& data_path);
+
   };
+
   using FootageStreamPtr = std::shared_ptr<FootageStream>;
   using FootageStreamWPtr = std::weak_ptr<FootageStream>;
 }

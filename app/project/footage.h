@@ -50,8 +50,6 @@ class Footage : public std::enable_shared_from_this<Footage>, public project::Pr
 
     double speed_{1.0};
 
-    PreviewGenerator* preview_gen{nullptr};
-
     long in{0};
     long out{0};
     bool using_inout{false};
@@ -64,6 +62,10 @@ class Footage : public std::enable_shared_from_this<Footage>, public project::Pr
     Footage(QString url, const std::shared_ptr<Media>& parent, const bool import_as_sequence=false);
     Footage(const Footage& cpy);
 
+    /**
+     * @brief   Generate a preview for each of the Footage's streams
+     * @return  true==all streams have previews, false==at least one stream has no preview
+     */
     bool generatePreviews();
 
     /**
@@ -113,7 +115,7 @@ class Footage : public std::enable_shared_from_this<Footage>, public project::Pr
     QVector<project::FootageStreamPtr> videoTracks() const;
     bool addAudioTrack(project::FootageStreamPtr track);
     QVector<project::FootageStreamPtr> audioTracks() const;
-
+    /* IXMLStreamer overrides */
     virtual bool load(QXmlStreamReader& stream) override;
     virtual bool save(QXmlStreamWriter& stream) const override;
   private:

@@ -20,9 +20,14 @@
 
 #include <QPainter>
 #include <QFile>
-
+#include <QDir>
+#include <QCryptographicHash>
+#include <QDateTime>
 #include <mediahandling/imediastream.h>
+#include <fmt/core.h>
+#include <stdlib.h>
 
+#include "io/path.h"
 #include "debug.h"
 
 using project::FootageStream;
@@ -31,26 +36,62 @@ using media_handling::MediaStreamPtr;
 using media_handling::MediaProperty;
 using media_handling::StreamType;
 
-FootageStream::FootageStream(MediaStreamPtr stream_info)
-  : stream_info_(std::move(stream_info))
+
+constexpr auto IMAGE_FRAMERATE = 0;
+constexpr auto PREVIEW_HEIGHT = 480;
+constexpr auto PREVIEW_DIR = "/previews";
+constexpr auto THUMB_PREVIEW_FORMAT = "jpg";
+constexpr auto THUMB_PREVIEW_QUALITY = 80;
+constexpr auto EXTENSION = "dat";
+constexpr auto PIXELS_PER_SECOND = 100;
+#ifdef __linux__
+constexpr auto CMD_FORMAT = "ffmpeg -i \"{0}\" -map 0:{1} -f wav - | audiowaveform --input-format wav --output-format {2} -b 8 "
+                            "--split-channels --pixels-per-second {3} -o \"{4}\" &>/dev/null";
+#elif _WIN64
+//TODO:
+constexpr auto CMD_FORMAT = "";
+#endif
+
+FootageStream::FootageStream(MediaStreamPtr stream_info, QString source_path, const bool is_audio)
+  : stream_info_(std::move(stream_info)),
+    source_path_(std::move(source_path)),
+    audio_(is_audio)
 {
   Q_ASSERT(stream_info_);
   initialise(*stream_info_);
+  data_path = chestnut::paths::dataPath() + PREVIEW_DIR;
+  const QDir data_dir(data_path);
+  if (!data_dir.exists()) {
+    data_dir.mkpath(".");
+  }
 }
 
-void FootageStream::make_square_thumb()
+
+bool FootageStream::generatePreview()
+{
+  bool success = false;
+  qDebug() << "Generating preview, index=" << file_index;
+  if (audio_) {
+    success = generateAudioPreview();
+  } else {
+    success = generateVisualPreview();
+  }
+  return success;
+}
+
+void FootageStream::makeSquareThumb(const int width, const int height)
 {
   qDebug() << "Making square thumbnail";
   // generate square version for QListView?
-  const auto max_dimension = qMax(video_preview.width(), video_preview.height());
+  const auto max_dimension = qMax(width, height);
   QPixmap pixmap(max_dimension, max_dimension);
   pixmap.fill(Qt::transparent);
   QPainter p(&pixmap);
-  const auto diff = (video_preview.width() - video_preview.height()) / 2;
+  const auto diff = (width - height) / 2;
   const auto sqx = (diff < 0) ? -diff : 0;
   const auto sqy = (diff > 0) ? diff : 0;
   p.drawImage(sqx, sqy, video_preview);
-  video_preview_square = QIcon(pixmap);
+  video_preview_square = QIcon(pixmap); //TODO: addPixmap()?
 }
 
 
@@ -166,18 +207,19 @@ auto convert(char* data, int size)
 {
   uint32_t val = 0;
   for (auto i = 0; i < size; ++i){
-    val |= static_cast<uint8_t>(data[i]) << (i * 8);
+    val |= static_cast<uint32_t>(data[i]) << (i * 8);
   }
   return val;
 }
 
-void FootageStream::onWaveformGenerated(std::string data_path)
+
+bool FootageStream::loadWaveformFile(const QString& data_path)
 {
-  qInfo() << "Reading waveform data, file_path:" << data_path.c_str();
-  QFile file(data_path.c_str());
+  qInfo() << "Reading waveform data, path:" << data_path;
+  QFile file(data_path);
   if (!file.open(QIODevice::ReadOnly)) {
-    qWarning() << "Failed to open wavform file, path:" << data_path.c_str();
-    return;
+    qWarning() << "Failed to open wavform file, path:" << data_path;
+    return false;
   }
 
   char data[4];
@@ -191,7 +233,7 @@ void FootageStream::onWaveformGenerated(std::string data_path)
   waveform_info_.version_ = readUint();
   if (waveform_info_.version_ < 2){
     qCritical() << "audiowaveform version is not supported";
-    return;
+    return false;
   }
   waveform_info_.flags_ = readUint();
   waveform_info_.rate_ = readUint();
@@ -214,7 +256,7 @@ void FootageStream::onWaveformGenerated(std::string data_path)
   for (const auto& samp: samples) {
     audio_preview.push_back(samp);
   }
-  preview_done = true;
+  return true;
 }
 
 
@@ -267,4 +309,68 @@ void FootageStream::initialise(const media_handling::IMediaStream& stream)
   } else {
     qWarning() << "Unhandled Stream type";
   }
+}
+
+bool FootageStream::generateVisualPreview()
+{
+  if (type_ == media_handling::StreamType::IMAGE) {
+    const QImage img(source_path_);
+    enabled           = true;
+    video_preview     = img.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
+    preview_done      = true;
+    video_height      = img.height();
+    video_width       = img.width();
+    infinite_length   = true;
+    video_frame_rate  = IMAGE_FRAMERATE;
+    makeSquareThumb(video_preview.width(), video_preview.height());
+    return true;
+  } else {
+    // TODO:
+  }
+
+
+  return true;
+}
+
+bool FootageStream::generateAudioPreview()
+{
+  bool success = false;
+  const auto preview_path = waveformPath();
+  QFileInfo file(preview_path);
+  if (file.exists() && file.size() > 0) {
+    success = loadWaveformFile(preview_path);
+    qDebug() << "Opened existing preview, index:" << file_index;
+    success = true;
+  } else {
+    const auto cmd = fmt::format(CMD_FORMAT, source_path_.toStdString(), file_index, EXTENSION, PIXELS_PER_SECOND,
+                                 preview_path.toStdString());
+    if (system(cmd.c_str()) == 0) {
+      success = loadWaveformFile(preview_path);
+      success = true;
+    } else {
+      qWarning() << "Failed to generate waveform, index:" << file_index;
+    }
+  }
+  return success;
+}
+
+QString FootageStream::previewHash() const
+{
+  const QFileInfo file_info(source_path_);
+  const QString cache_file(file_info.fileName()
+                           + QString::number(file_info.size())
+                           + QString::number(file_info.lastModified().toMSecsSinceEpoch()));
+  const QString hash(QCryptographicHash::hash(cache_file.toUtf8(), QCryptographicHash::Md5).toHex());
+  return hash;
+}
+
+QString FootageStream::thumbnailPath() const
+{
+  return QDir(data_path).filePath(previewHash() + "t" + QString::number(file_index));
+}
+
+
+QString FootageStream::waveformPath() const
+{
+  return QDir(data_path).filePath(previewHash() + "w" + QString::number(file_index));
 }

@@ -25,7 +25,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-#include "io/previewgenerator.h"
 #include "project/clip.h"
 #include "panels/project.h"
 
@@ -41,7 +40,6 @@ Footage::Footage(const Footage& cpy)
     save_id(0),
     folder_(cpy.folder_),
     speed_(cpy.speed_),
-    preview_gen(cpy.preview_gen),
     in(cpy.in),
     out(cpy.out),
     using_inout(cpy.using_inout),
@@ -80,16 +78,6 @@ Footage::Footage(QString url, const std::shared_ptr<Media>& parent, const bool i
 
 void Footage::reset()
 {
-  if (preview_gen != nullptr) {
-    try {
-      preview_gen->cancel();
-      preview_gen->wait();
-    } catch (const std::exception& ex) {
-      qCritical() << "Caught an exception, msg =" << ex.what();
-    } catch (...) {
-      qCritical() << "Caught an unknown exception";
-    }
-  }
   video_tracks.clear();
   audio_tracks.clear();
   ready_ = false;
@@ -148,13 +136,13 @@ void Footage::parseStreams()
 
   video_tracks.clear();
   for (auto[key, stream] : media_source_->visualStreams()) {
-    video_tracks.insert(key, std::make_shared<project::FootageStream>(stream));
+    video_tracks.insert(key, std::make_shared<project::FootageStream>(stream, location(), false));
   }
 
   audio_tracks.clear();
 
   for (auto[key, stream] : media_source_->audioStreams()) {
-    audio_tracks.insert(key, std::make_shared<project::FootageStream>(stream));
+    audio_tracks.insert(key, std::make_shared<project::FootageStream>(stream, location(), true));
   }
 
   bool is_okay = false;
@@ -357,8 +345,18 @@ constexpr long lengthToFrames(const int64_t length, const double frame_rate, con
 
 bool Footage::generatePreviews()
 {
-  //TODO: iterate through streams generating previews for each
-  return false;
+  bool success = true;
+  for (const auto& v_t : video_tracks + audio_tracks) {
+    Q_ASSERT(v_t);
+    success &= v_t->generatePreview();
+  }
+
+  // NOTE: see PreviewGenerator::finalize_media()
+
+
+  ready_ = success;
+  has_preview_ = success;
+  return success;
 }
 
 bool Footage::isMissing() const noexcept

@@ -31,6 +31,7 @@
 #include "project/projectmodel.h"
 #include "project/sequence.h"
 #include "project/media.h"
+#include "project/previewgeneratorthread.h"
 
 class Footage;
 
@@ -117,7 +118,6 @@ public:
     QVector<MediaPtr> list_all_project_sequences();
     QModelIndexList get_current_selected();
 
-    void start_preview_generator(MediaPtr item, const bool replacing);
     void get_all_media_from_table(QVector<MediaPtr> &items, QVector<MediaPtr> &list, const MediaType type = MediaType::NONE);
 
     /**
@@ -147,10 +147,15 @@ private:
     QPushButton* directory_up;
     QVector<MediaPtr> last_imported_media;
     inline static std::unique_ptr<ProjectModel> model_ {nullptr};
+    chestnut::project::PreviewGeneratorThread* preview_gen_ {nullptr};
 
     void list_all_sequences_worker(QVector<MediaPtr> &list, MediaPtr parent); //TODO: recursive depth limit
     QString get_file_name_from_path(const QString &path) const;
     QString get_file_ext_from_path(const QString &path) const;
+
+    void getPreview(MediaPtr mda);
+
+    void setModelItemIcon(FootagePtr ftg, QIcon icon) const;
 
 private slots:
     void update_view_type();
@@ -161,12 +166,14 @@ private slots:
     void set_up_dir_enabled();
     void go_up_dir();
     void make_new_menu();
+    void setItemIcon(FootageWPtr item);
+    void setItemMissing(FootageWPtr item);
 };
 
 class MediaThrobber : public QObject {
     Q_OBJECT
 public:
-    MediaThrobber(MediaPtr, QObject* parent=nullptr);
+    MediaThrobber(MediaPtr item, QObject* parent=nullptr);
 public slots:
     void start();
     void stop(const int icon_type, const bool replace);
