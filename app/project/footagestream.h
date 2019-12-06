@@ -47,10 +47,10 @@ namespace project {
       int audio_channels {-1};
       int audio_layout {-1};
       int audio_frequency {-1};
-      bool enabled {true};
+      bool enabled_ {true};
 
       // preview thumbnail/waveform
-      bool preview_done {false};
+      bool preview_done_ {false};
       QImage video_preview;
       QIcon video_preview_square;
       QVector<char> audio_preview;
@@ -66,7 +66,6 @@ namespace project {
 
       bool generatePreview();
 
-      void makeSquareThumb(const int width, const int height);
       void setStreamInfo(media_handling::MediaStreamPtr stream_info);
       std::optional<media_handling::FieldOrder> fieldOrder() const;
 
@@ -104,6 +103,7 @@ namespace project {
        * @return          true==success
        */
       bool loadWaveformFile(const QString& data_path);
+      void makeSquareThumb();
 
   };
 

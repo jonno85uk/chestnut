@@ -3033,7 +3033,7 @@ void TimelineWidget::drawClips(SequencePtr seq, Timeline& time_line, QPainter& p
 
         if (ms == nullptr) {
           draw_checkerboard = true;
-        } else if (ms->preview_done) {
+        } else if (ms->preview_done_) {
           // draw top and tail triangles
           constexpr int triangle_size = TRACK_MIN_HEIGHT >> 2;
           if (!ms->infinite_length && clip_rect.width() > triangle_size) {

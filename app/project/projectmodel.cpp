@@ -33,10 +33,6 @@ ProjectModel::ProjectModel(QObject *parent)
   insert(std::make_shared<Media>());
 }
 
-ProjectModel::~ProjectModel()
-{
-}
-
 void ProjectModel::destroy_root()
 {
   PanelManager::sequenceViewer().viewer_widget->delete_function();

@@ -429,7 +429,7 @@ QVariant Media::data(const int32_t column, const int32_t role)
       if (type() == MediaType::FOOTAGE) {
         if (auto ftg = object<Footage>(); (!ftg->videoTracks().empty())
             && ftg->videoTracks().front()
-            && ftg->videoTracks().front()->preview_done) {
+            && ftg->videoTracks().front()->preview_done_) {
           return ftg->videoTracks().front()->video_preview_square;
         }
       }

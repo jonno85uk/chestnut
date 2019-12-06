@@ -65,7 +65,7 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
             )
           );
     trackItem->setFlags(trackItem->flags() | Qt::ItemIsUserCheckable);
-    trackItem->setCheckState(stream->enabled ? Qt::Checked : Qt::Unchecked);
+    trackItem->setCheckState(stream->enabled_ ? Qt::Checked : Qt::Unchecked);
     trackItem->setData(Qt::UserRole+1, stream->file_index);
     track_list->addItem(trackItem);
   }
@@ -82,7 +82,7 @@ MediaPropertiesDialog::MediaPropertiesDialog(QWidget *parent, MediaPtr mda) :
             )
           );
     trackItem->setFlags(trackItem->flags() | Qt::ItemIsUserCheckable);
-    trackItem->setCheckState(stream->enabled ? Qt::Checked : Qt::Unchecked);
+    trackItem->setCheckState(stream->enabled_ ? Qt::Checked : Qt::Unchecked);
     trackItem->setData(Qt::UserRole+1, stream->file_index);
     track_list->addItem(trackItem);
   }
@@ -152,7 +152,7 @@ void MediaPropertiesDialog::accept()
         continue;
       }
       if (stream->file_index == index) {
-        stream->enabled = (trackItem->checkState() == Qt::Checked);
+        stream->enabled_ = (trackItem->checkState() == Qt::Checked);
         found = true;
         break;
       }
@@ -164,7 +164,7 @@ void MediaPropertiesDialog::accept()
           continue;
         }
         if (stream->file_index == index) {
-          stream->enabled = (trackItem->checkState() == Qt::Checked);
+          stream->enabled_ = (trackItem->checkState() == Qt::Checked);
           break;
         }
       }

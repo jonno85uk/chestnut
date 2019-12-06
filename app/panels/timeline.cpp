@@ -324,7 +324,7 @@ void Timeline::createGhostsFromMedia(SequencePtr &seq, const long entry_point, Q
 
         for (int j = 0; j < ftg->audioTracks().size(); ++j) {
           Q_ASSERT(ftg->audioTracks().at(j));
-          if (!ftg->audioTracks().at(j)->enabled) {
+          if (!ftg->audioTracks().at(j)->enabled_) {
             continue;
           }
           g.track = j;
@@ -335,7 +335,7 @@ void Timeline::createGhostsFromMedia(SequencePtr &seq, const long entry_point, Q
 
         for (int j = 0; j < ftg->videoTracks().size(); ++j) {
           Q_ASSERT(ftg->videoTracks().at(j));
-          if (!ftg->videoTracks().at(j)->enabled) {
+          if (!ftg->videoTracks().at(j)->enabled_) {
             continue;
           }
           g.track = -1 - j;

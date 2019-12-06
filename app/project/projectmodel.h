@@ -28,7 +28,7 @@ class ProjectModel : public QAbstractItemModel, public project::IXMLStreamer
     Q_OBJECT
 public:
     explicit ProjectModel(QObject* parent = nullptr);
-    virtual ~ProjectModel() override;
+    virtual ~ProjectModel() override = default;
 
     ProjectModel(const ProjectModel&) = delete;
     ProjectModel(const ProjectModel&&) = delete;
