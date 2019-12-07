@@ -148,6 +148,7 @@ private:
     QVector<MediaPtr> last_imported_media;
     inline static std::unique_ptr<ProjectModel> model_ {nullptr};
     chestnut::project::PreviewGeneratorThread* preview_gen_ {nullptr};
+    QMap<MediaPtr, MediaThrobber*> media_throbbers_;
 
     void list_all_sequences_worker(QVector<MediaPtr> &list, MediaPtr parent); //TODO: recursive depth limit
     QString get_file_name_from_path(const QString &path) const;
@@ -156,6 +157,8 @@ private:
     void getPreview(MediaPtr mda);
 
     void setModelItemIcon(FootagePtr ftg, QIcon icon) const;
+
+    void stopThrobber(FootagePtr ftg);
 
 private slots:
     void update_view_type();
@@ -176,14 +179,14 @@ public:
     MediaThrobber(MediaPtr item, QObject* parent=nullptr);
 public slots:
     void start();
-    void stop(const int icon_type, const bool replace);
+    void stop();
 private slots:
     void animation_update();
 private:
     QPixmap pixmap;
     int animation;
     MediaPtr item;
-    std::unique_ptr<QTimer> animator;
+    QTimer* animator;
 };
 
 #endif // PROJECT_H

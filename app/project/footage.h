@@ -62,6 +62,8 @@ class Footage : public std::enable_shared_from_this<Footage>, public project::Pr
     Footage(QString url, const std::shared_ptr<Media>& parent, const bool import_as_sequence=false);
     Footage(const Footage& cpy);
 
+    std::weak_ptr<Media> parent();
+
     /**
      * @brief   Generate a preview for each of the Footage's streams
      * @return  true==all streams have previews, false==at least one stream has no preview

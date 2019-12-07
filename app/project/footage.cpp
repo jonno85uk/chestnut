@@ -76,6 +76,12 @@ Footage::Footage(QString url, const std::shared_ptr<Media>& parent, const bool i
   parseStreams();
 }
 
+
+std::weak_ptr<Media> Footage::parent()
+{
+  return parent_mda_;
+}
+
 void Footage::reset()
 {
   video_tracks.clear();

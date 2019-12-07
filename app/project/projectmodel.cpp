@@ -158,18 +158,6 @@ bool ProjectModel::saveTypes(QXmlStreamWriter& stream, const MediaType mda_type)
   return true;
 }
 
-
-MediaPtr ProjectModel::findMedia(FootagePtr ftg)
-{
-  Q_ASSERT(ftg);
-  for (auto[id, mda] : project_items.toStdMap()) {
-    if (ftg == mda->object<Footage>()) {
-      return mda;
-    }
-  }
-  return {};
-}
-
 QModelIndex ProjectModel::parent(const QModelIndex &index) const
 {
   if (!index.isValid())
@@ -272,7 +260,7 @@ void ProjectModel::set_icon(const MediaPtr& m, const QIcon &ico)
 void ProjectModel::setIcon(FootagePtr ftg, QIcon icon)
 {
   Q_ASSERT(ftg);
-  if (auto mda = findMedia(ftg)) {
+  if (auto mda = ftg->parent().lock()) {
     set_icon(mda, std::move(icon));
   } else {
     qWarning() << "Failed to find media object, ftg:" << ftg->location();

@@ -101,6 +101,7 @@ Project::Project(QWidget *parent) :
   preview_gen_ = new PreviewGeneratorThread(this);
   qRegisterMetaType<FootageWPtr>();
   connect(preview_gen_, &PreviewGeneratorThread::previewGenerated, this, &Project::setItemIcon);
+  connect(preview_gen_, &PreviewGeneratorThread::previewFailed, this, &Project::setItemMissing);
 
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -412,9 +413,10 @@ void Project::getPreview(MediaPtr mda)
     return;
   }
   // TODO: set up throbber animation. No way of stopping atm
-//  const auto throbber = new MediaThrobber(mda, this);
-//  throbber->moveToThread(QApplication::instance()->thread());
-//  QMetaObject::invokeMethod(throbber, "start", Qt::QueuedConnection);
+  const auto throbber = new MediaThrobber(mda, this);
+  throbber->moveToThread(QApplication::instance()->thread());
+  QMetaObject::invokeMethod(throbber, "start", Qt::QueuedConnection);
+  media_throbbers_[mda] = throbber;
 
   Q_ASSERT(preview_gen_);
   preview_gen_->addToQueue(mda->object<Footage>());
@@ -441,6 +443,18 @@ void Project::setModelItemIcon(FootagePtr ftg, QIcon icon) const
 
   Q_ASSERT(tree_view_);
   tree_view_->viewport()->update();
+}
+
+
+void Project::stopThrobber(FootagePtr ftg)
+{
+  auto mda = ftg->parent().lock();
+  if (media_throbbers_.count(mda) == 1) {
+    if (auto throbber = media_throbbers_[mda]) {
+      QMetaObject::invokeMethod(throbber, "stop", Qt::QueuedConnection);
+    }
+    media_throbbers_.remove(mda);
+  }
 }
 
 
@@ -1141,14 +1155,12 @@ void Project::make_new_menu()
 void Project::setItemIcon(FootageWPtr item)
 {
   if (auto ftg = item.lock()) {
+    stopThrobber(ftg);
     QIcon icon;
     if (ftg->videoTracks().empty()) {
       icon.addFile(":/icons/audiosource.png");
-    } else if (ftg->visualType() == media_handling::StreamType::IMAGE) {
-      icon.addFile(":/icons/imagesource.png");
-    } else {
-      icon.addFile(":/icons/videosource.png");
     }
+    // setting a default icon for image/video is pointless as those clips have one generated
     setModelItemIcon(ftg, icon);
   }
 }
@@ -1156,12 +1168,14 @@ void Project::setItemIcon(FootageWPtr item)
 void Project::setItemMissing(FootageWPtr item)
 {
   if (auto ftg = item.lock()) {
+    stopThrobber(ftg);
     QIcon icon(":/icons/error.png");
     setModelItemIcon(ftg, icon);
   }
 }
 
-void Project::add_recent_project(QString url) {
+void Project::add_recent_project(QString url)
+{
   bool found = false;
   for (int i=0;i<recent_projects.size();i++) {
     if (url == recent_projects.at(i)) {
@@ -1245,13 +1259,13 @@ QModelIndexList Project::get_current_selected()
 
 
 MediaThrobber::MediaThrobber(MediaPtr item, QObject* parent)
-  : pixmap(":/icons/throbber.png"),
+  : QObject(parent),
+    pixmap(":/icons/throbber.png"),
     animation(0),
     item(std::move(item)),
     animator(nullptr)
 {
-  animator = std::make_unique<QTimer>(this);
-  setParent(parent);
+  animator = new QTimer(this);
 }
 
 void MediaThrobber::start()
@@ -1259,7 +1273,7 @@ void MediaThrobber::start()
   // set up throbber
   animation_update();
   animator->setInterval(THROBBER_INTERVAL);
-  connect(animator.get(), SIGNAL(timeout()), this, SLOT(animation_update()));
+  connect(animator, SIGNAL(timeout()), this, SLOT(animation_update()));
   animator->start();
 }
 
@@ -1272,10 +1286,10 @@ void MediaThrobber::animation_update()
   animation++;
 }
 
-void MediaThrobber::stop(const int icon_type, const bool replace)
+void MediaThrobber::stop()
 {
-  if (animator.get() != nullptr) {
-    animator->stop();
-  }
+  qDebug() << "Stopping:" << item->id();
+  Q_ASSERT(animator);
+  animator->stop();
   deleteLater();
 }

@@ -103,7 +103,6 @@ private:
     bool saveSequences(QXmlStreamWriter& stream) const;
     bool saveTypes(QXmlStreamWriter& stream, const MediaType mda_type) const;
 
-    MediaPtr findMedia(FootagePtr ftg);
 };
 
 #endif // PROJECTMODEL_H
