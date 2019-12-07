@@ -28,16 +28,9 @@
 #include <fmt/core.h>
 #include <stdlib.h>
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libswresample/swresample.h>
-}
-
-
 #include "io/path.h"
 #include "debug.h"
+
 
 using project::FootageStream;
 using media_handling::FieldOrder;
@@ -48,7 +41,6 @@ using media_handling::StreamType;
 
 constexpr auto IMAGE_FRAMERATE = 0;
 constexpr auto PREVIEW_HEIGHT = 480;
-constexpr auto PREVIEW_CHANNELS = 4; // RGBA
 constexpr auto PREVIEW_DIR = "/previews";
 constexpr auto THUMB_PREVIEW_FORMAT = "jpg";
 constexpr auto THUMB_PREVIEW_QUALITY = 80;
@@ -326,11 +318,6 @@ void FootageStream::initialise(const media_handling::IMediaStream& stream)
   }
 }
 
-void thumb_data_cleanup(void *info)
-{
-  delete [] static_cast<uint8_t*>(info);
-}
-
 bool FootageStream::generateVisualPreview()
 {
   if (type_ == media_handling::StreamType::IMAGE) {
@@ -351,137 +338,26 @@ bool FootageStream::generateVisualPreview()
     if (QFileInfo(preview_path).exists()) {
       video_preview = QImage(preview_path);
     } else {
-      // TODO: use source_info_
       qInfo() << "Generating preview from video, file:" << source_path_;
-      const auto filename(source_path_.toUtf8().data());
-      QString errorStr;
-      bool error = false;
-      AVFormatContext* fmt_ctx = nullptr;
-      int err_code = avformat_open_input(&fmt_ctx, filename, nullptr, nullptr);
-      if (err_code != 0) {
-        return false;
-        //          char err[1024];
-        //          av_strerror(errCode, err, 1024);
-        //          errorStr = QObject::tr("Could not open file - %1").arg(err);
-        //          error = true;
+      stream_info_->setOutputFormat(media_handling::PixelFormat::RGBA);
+      if (auto frame = stream_info_->frame(0)) { //TODO: use the wadsworth constant?
+        auto f_d = frame->data();
+        video_preview = QImage(*f_d.data_, video_width, video_height, f_d.line_size_, QImage::Format_RGBA8888);
+        if (!video_preview.isNull()) {
+          video_preview.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
+          if (video_preview.save(preview_path, THUMB_PREVIEW_FORMAT, THUMB_PREVIEW_QUALITY)) {
+            // f_d.data_ exists for the lifetime of the frame unless memcpy
+            // just reload from FS instead
+            video_preview.load(preview_path);
+          } else {
+            qWarning() << "Video preview did not save, path:" << source_path_;
+          }
+        } else {
+          qCritical() << "Failed to load image data, path:" << source_path_;
+        }
+      } else {
+        qCritical() << "Failed to retrieve a video frame from backend, path:" << source_path_;
       }
-      err_code = avformat_find_stream_info(fmt_ctx, nullptr);
-      if (err_code < 0) {
-        return false;
-        //          char err[1024];
-        //          av_strerror(err_code, err, 1024);
-        //          errorStr = tr("Could not find stream information - %1").arg(err);
-        //          error = true;
-      }
-
-      gsl::span<AVCodecContext*> codec_ctx(new AVCodecContext* [fmt_ctx->nb_streams], fmt_ctx->nb_streams);
-      gsl::span<AVStream*> streams(fmt_ctx->streams, fmt_ctx->nb_streams);
-      for (size_t i = 0; i < streams.size(); ++i) {
-        codec_ctx[i] = nullptr;
-        if ( (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
-             || (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) ) {
-          AVCodec* const codec = avcodec_find_decoder(streams[i]->codecpar->codec_id);
-          if (codec == nullptr) {
-            continue;
-          }
-          codec_ctx[i] = avcodec_alloc_context3(codec); //FIXME: memory leak
-          avcodec_parameters_to_context(codec_ctx[i], streams[i]->codecpar);
-          avcodec_open2(codec_ctx[i], codec, nullptr);
-          if ( (streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) && (codec_ctx[i]->channel_layout == 0) ) {
-            codec_ctx[i]->channel_layout = av_get_default_channel_layout(streams[i]->codecpar->channels);
-          }
-        }
-      }//for
-
-      AVPacket* packet = av_packet_alloc();
-      bool end_of_file = false;
-
-      // get the ball rolling
-      do {
-        av_read_frame(fmt_ctx, packet);
-      } while (codec_ctx[packet->stream_index] == nullptr);
-      avcodec_send_packet(codec_ctx[packet->stream_index], packet);
-
-      SwsContext* sws_ctx = nullptr;
-      AVFrame* temp_frame = av_frame_alloc();
-      gsl::span<int64_t> media_lengths(new int64_t[fmt_ctx->nb_streams], fmt_ctx->nb_streams);
-      while (!end_of_file) {
-        while ( (codec_ctx[packet->stream_index] == nullptr)
-                || (avcodec_receive_frame(codec_ctx[packet->stream_index], temp_frame) == AVERROR(EAGAIN)) ) {
-          av_packet_unref(packet);
-          const auto read_ret = av_read_frame(fmt_ctx, packet);
-          if (read_ret < 0) {
-            end_of_file = true;
-            if (read_ret != AVERROR_EOF) {
-              qCritical() << "Failed to read packet for preview generation" << read_ret;
-            }
-            break;
-          }
-          if (codec_ctx[packet->stream_index] != nullptr) {
-            const auto send_ret = avcodec_send_packet(codec_ctx[packet->stream_index], packet);
-            if (send_ret < 0 && send_ret != AVERROR(EAGAIN)) {
-              qCritical() << "Failed to send packet for preview generation - aborting" << send_ret;
-              end_of_file = true;
-              break;
-            }
-          }
-        }
-        if (end_of_file) {
-          break;
-        }
-        const auto isVideo = streams[packet->stream_index]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO;
-        if (isVideo) {
-          if (!preview_done_) {
-            const int dstW = lround(PREVIEW_HEIGHT * (static_cast<double>(temp_frame->width) / temp_frame->height));
-            auto const imgData = new uint8_t[dstW * PREVIEW_HEIGHT * PREVIEW_CHANNELS]; //FIXME: still showing up as a memory leak
-
-            sws_ctx = sws_getContext(
-                        temp_frame->width,
-                        temp_frame->height,
-                        static_cast<AVPixelFormat>(temp_frame->format),
-                        dstW,
-                        PREVIEW_HEIGHT,
-                        static_cast<AVPixelFormat>(AV_PIX_FMT_RGBA),
-                        SWS_FAST_BILINEAR,
-                        nullptr,
-                        nullptr,
-                        nullptr
-                        );
-
-            int linesize[AV_NUM_DATA_POINTERS];
-            linesize[0] = dstW * 4;
-            sws_scale(sws_ctx, temp_frame->data, temp_frame->linesize, 0, temp_frame->height, &imgData, linesize);
-
-            video_preview = QImage(imgData, dstW, PREVIEW_HEIGHT, linesize[0], QImage::Format_RGBA8888, thumb_data_cleanup);
-            if (!video_preview.save(preview_path, THUMB_PREVIEW_FORMAT, THUMB_PREVIEW_QUALITY)) {
-              qWarning() << "Video preview did not save, path:" << source_path_;
-            }
-
-            sws_freeContext(sws_ctx);
-
-            avcodec_close(codec_ctx[packet->stream_index]);
-            codec_ctx[packet->stream_index] = nullptr;
-          }
-          media_lengths.at(packet->stream_index)++;
-        }
-
-        av_packet_unref(packet);
-      }//while
-
-      av_frame_free(&temp_frame);
-      av_packet_free(&packet);
-      for (auto codec : codec_ctx){
-        if (codec != nullptr) {
-          avcodec_close(codec);
-          avcodec_free_context(&codec);
-        }
-      }
-      delete [] media_lengths.data();
-
-      delete [] codec_ctx.data();
-
-      av_dump_format(fmt_ctx, 0, filename, 0);
-      avformat_close_input(&fmt_ctx);
     }
   }
   return true;
