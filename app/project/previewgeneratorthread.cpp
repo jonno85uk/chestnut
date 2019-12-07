@@ -40,7 +40,7 @@ void PreviewGeneratorThread::addToQueue(FootagePtr ftg)
   if (ftg == nullptr) {
     return;
   }
-  QMutexLocker lock(&mutex_);
+  QMutexLocker lock(&queue_mutex_);
   queue_.enqueue(ftg);
   lock.unlock();
   qDebug() << "Added footage to preview generator queue, file_path:" << ftg->location();
@@ -53,20 +53,21 @@ void PreviewGeneratorThread::run()
   qDebug() << "Starting Preview Generator thread";
   while (running_) {
     wait_cond_.wait(&mutex_);
-    if (queue_.empty()) {
-      // Mostly likely stopping
-      continue;
-    }
-    if (auto ftg = queue_.dequeue().lock()) {
-      if (ftg->generatePreviews()) {
-        emit previewGenerated(ftg);
-        qInfo() << "Footage generated preview(s), file_path:" << ftg->location();
+    QMutexLocker lock(&queue_mutex_);
+    while (!queue_.empty()) {
+      if (auto ftg = queue_.dequeue().lock()) {
+        lock.unlock();
+        if (ftg->generatePreviews()) {
+          emit previewGenerated(ftg);
+          qInfo() << "Footage generated preview(s), file_path:" << ftg->location();
+        } else {
+          emit previewFailed(ftg);
+          qWarning() << "Footage failed to generate preview(s), file_path:" << ftg->location();
+        }
       } else {
-        emit previewFailed(ftg);
-        qWarning() << "Footage failed to generate preview(s), file_path:" << ftg->location();
+        lock.unlock();
+        qWarning() << "Queued Footage is null";
       }
-    } else {
-      qWarning() << "Queued Footage is null";
     }
   }
   mutex_.unlock();

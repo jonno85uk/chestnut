@@ -49,6 +49,7 @@ namespace chestnut::project
       std::thread thread_;
       QQueue<FootageWPtr> queue_;
       QMutex mutex_;
+      QMutex queue_mutex_;
       QWaitCondition wait_cond_;
       std::atomic_bool running_ {true};
 
