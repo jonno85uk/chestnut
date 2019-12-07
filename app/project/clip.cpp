@@ -1010,7 +1010,6 @@ void Clip::frame(const long playhead, bool& texture_failed)
               target_frame = nullptr;
             }
             reset = true;
-            qInfo() << "Resetting";
             last_invalid_ts = target_pts;
           } else {
             if (queue.size() >= max_queue_size) {
@@ -1023,7 +1022,6 @@ void Clip::frame(const long playhead, bool& texture_failed)
         }
       }
     } else {
-      qInfo() << "Resetting";
       reset = true;
     }
 
