@@ -351,14 +351,13 @@ constexpr long lengthToFrames(const int64_t length, const double frame_rate, con
 
 bool Footage::generatePreviews()
 {
+  qInfo() << "Generating previews for all streams, path:" << url_;
   bool success = true;
-  for (const auto& v_t : video_tracks + audio_tracks) {
-    Q_ASSERT(v_t);
-    success &= v_t->generatePreview();
+  for (const auto& trk : video_tracks + audio_tracks) {
+    Q_ASSERT(trk);
+    qDebug() << "Stream index:" << trk->file_index;
+    success &= trk->generatePreview();
   }
-
-  // NOTE: see PreviewGenerator::finalize_media()
-
 
   ready_ = success;
   has_preview_ = success;

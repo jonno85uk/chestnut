@@ -80,7 +80,7 @@ FootageStream::FootageStream(MediaStreamPtr stream_info, QString source_path, co
 bool FootageStream::generatePreview()
 {
   bool success = false;
-  qDebug() << "Generating preview, index=" << file_index;
+  qDebug() << "Generating preview, index=" << file_index << ", path:" << source_path_;
   if (audio_) {
     success = generateAudioPreview();
   } else {
@@ -89,6 +89,7 @@ bool FootageStream::generatePreview()
       makeSquareThumb();
     }
   }
+  qDebug() << "success:" << success << ", index:" << file_index << ", path:" << source_path_;
   preview_done_ = success;
   return success;
 }
@@ -105,7 +106,7 @@ void FootageStream::makeSquareThumb()
   const auto sqx = (diff < 0) ? -diff : 0;
   const auto sqy = (diff > 0) ? diff : 0;
   p.drawImage(sqx, sqy, video_preview);
-  video_preview_square = QIcon(pixmap); //TODO: addPixmap()?
+  video_preview_square.addPixmap(pixmap);
 }
 
 
