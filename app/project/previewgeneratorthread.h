@@ -40,9 +40,23 @@ namespace chestnut::project
       explicit PreviewGeneratorThread(QObject* parent=nullptr);
       ~PreviewGeneratorThread() override;
 
+      /**
+       * @brief       Add to the queue a Footage for its previews to be read/generated in turn
+       * @param ftg
+       * @see previewGenerated
+       * @see previewFailed
+       */
       void addToQueue(FootagePtr ftg);
     signals:
+      /**
+       * @brief       Signal to indicate that all streams in a Footage have previews
+       * @param item
+       */
       void previewGenerated(FootageWPtr item);
+      /**
+       * @brief       Signal to indicate that one or all streams in a Footage are missing previews
+       * @param item
+       */
       void previewFailed(FootageWPtr item);
 
     private:
@@ -53,6 +67,9 @@ namespace chestnut::project
       QWaitCondition wait_cond_;
       std::atomic_bool running_ {true};
 
+      /**
+       * @brief The worker method for the thread
+       */
       void run();
 
   };

@@ -321,6 +321,7 @@ void FootageStream::initialise(const media_handling::IMediaStream& stream)
 bool FootageStream::generateVisualPreview()
 {
   if (type_ == media_handling::StreamType::IMAGE) {
+    //TODO: load/store small thumbnail of image
     const QImage img(source_path_);
     if (!img.isNull()) {
       video_preview     = img.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
@@ -330,18 +331,26 @@ bool FootageStream::generateVisualPreview()
       video_frame_rate  = IMAGE_FRAMERATE;
       return true;
     } else {
-
       qCritical() << "Failed to open image, path:" << source_path_;
     }
   } else {
     const auto preview_path = thumbnailPath();
     if (QFileInfo(preview_path).exists()) {
+      qInfo() << "Loading video preview, file:" << source_path_;
       video_preview = QImage(preview_path);
+      if (video_preview.isNull()) {
+        qCritical() << "Failed to load video preview from file, preview_path:"  << preview_path
+                    << ", file:" << source_path_;
+      }
     } else {
       qInfo() << "Generating preview from video, file:" << source_path_;
       stream_info_->setOutputFormat(media_handling::PixelFormat::RGBA);
       if (auto frame = stream_info_->frame(0)) { //TODO: use the wadsworth constant?
         auto f_d = frame->data();
+        if (f_d.data_ == nullptr) {
+          qCritical() << "Frame data is null, path:" << source_path_;
+          return false;
+        }
         video_preview = QImage(*f_d.data_, video_width, video_height, f_d.line_size_, QImage::Format_RGBA8888);
         if (!video_preview.isNull()) {
           video_preview.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);

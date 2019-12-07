@@ -42,19 +42,17 @@ namespace project {
       int file_index {-1};
       int video_width {-1};
       int video_height {-1};
-      bool infinite_length {false};
       double video_frame_rate {0.0};
       int audio_channels {-1};
       int audio_layout {-1};
       int audio_frequency {-1};
-      bool enabled_ {true};
-
-      // preview thumbnail/waveform
-      bool preview_done_ {false};
       QImage video_preview;
       QIcon video_preview_square;
       QVector<char> audio_preview;
       media_handling::StreamType type_ {media_handling::StreamType::UNKNOWN};
+      bool enabled_ {true};
+      bool infinite_length {false};
+      bool preview_done_ {false};
 
       FootageStream() = default;
       FootageStream(media_handling::MediaStreamPtr stream_info, QString source_path, const bool is_audio);
@@ -64,11 +62,16 @@ namespace project {
       FootageStream& operator=(const FootageStream& rhs) = delete;
       FootageStream& operator=(const FootageStream&& rhs) = delete;
 
+      /**
+       * @brief   Generate the preview or load if already exists
+       * @return  true==preview available
+       */
       bool generatePreview();
 
       void setStreamInfo(media_handling::MediaStreamPtr stream_info);
       std::optional<media_handling::FieldOrder> fieldOrder() const;
 
+      /* IXMLStreamer overrides */
       virtual bool load(QXmlStreamReader& stream) override;
       virtual bool save(QXmlStreamWriter& stream) const override;
 
@@ -89,20 +92,43 @@ namespace project {
       bool audio_ {false};
 
       void initialise(const media_handling::IMediaStream& stream);
-
+      /**
+       * @brief   Generate preview of video/image stream
+       * @note    Only generates if doesn't already exist. Loads if it does exist
+       * @return  true==preview available
+       */
       bool generateVisualPreview();
+      /**
+       * @brief   Generate preview of an audio stream
+       * @note    Only generates if doesn't already exist. Loads if it does exist
+       * @return  true==preview available
+       */
       bool generateAudioPreview();
+      /**
+       * @brief   The hash of the source file path
+       * @return
+       */
       QString previewHash() const;
+      /**
+       * @brief  Filepath where a thumbnail of this stream should be located
+       * @return filepath
+       */
       QString thumbnailPath() const;
+      /**
+       * @brief  Filepath where waveform data of this stream should be located
+       * @return filepath
+       */
       QString waveformPath() const;
-      void imagePreview();
-      void videoPreview();
       /**
        * @brief           Load a waveform file formatted using bbc/audiowaveform structure
        * @param data_path Location of waveform file to load
        * @return          true==success
        */
       bool loadWaveformFile(const QString& data_path);
+      /**
+       * @brief Make an thumbnail (icon)
+       * @note Thumbnail is used in tree-view
+       */
       void makeSquareThumb();
 
   };
