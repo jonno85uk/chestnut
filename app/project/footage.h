@@ -30,7 +30,6 @@
 
 
 class Clip;
-class PreviewGenerator;
 class MediaThrobber;
 class Media;
 
