@@ -344,16 +344,17 @@ bool FootageStream::generateVisualPreview()
       }
     } else {
       qInfo() << "Generating preview from video, file:" << source_path_;
-      stream_info_->setOutputFormat(media_handling::PixelFormat::RGBA);
+      const auto aspect = static_cast<double>(video_width) / video_height;
+      const media_handling::Dimensions dims {qRound(PREVIEW_HEIGHT * aspect), PREVIEW_HEIGHT};
+      stream_info_->setOutputFormat(media_handling::PixelFormat::RGBA, dims, media_handling::InterpolationMethod::NEAREST);
       if (auto frame = stream_info_->frame(0)) { //TODO: use the wadsworth constant?
         auto f_d = frame->data();
         if (f_d.data_ == nullptr) {
           qCritical() << "Frame data is null, path:" << source_path_;
           return false;
         }
-        video_preview = QImage(*f_d.data_, video_width, video_height, f_d.line_size_, QImage::Format_RGBA8888);
+        video_preview = QImage(*f_d.data_, dims.width, dims.height, f_d.line_size_, QImage::Format_RGBA8888);
         if (!video_preview.isNull()) {
-          video_preview.scaledToHeight(PREVIEW_HEIGHT, Qt::SmoothTransformation);
           if (video_preview.save(preview_path, THUMB_PREVIEW_FORMAT, THUMB_PREVIEW_QUALITY)) {
             // f_d.data_ exists for the lifetime of the frame unless memcpy
             // just reload from FS instead
