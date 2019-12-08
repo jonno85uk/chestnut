@@ -229,12 +229,13 @@ bool FootageStream::loadWaveformFile(const QString& data_path)
     return false;
   }
 
-  char data[4];
+  constexpr auto buf_size = 4;
+  char data[buf_size];
   auto readUint = [&]() -> uint32_t {
-                  if (file.read(data, 4) != 4) {
-                  throw std::runtime_error("Unable to read from file");
-}
-                  return convert(data, 4);
+    if (file.read(data, buf_size) != buf_size) {
+      throw std::runtime_error("Unable to read from file");
+    }
+    return convert(data, buf_size);
 };
 
   waveform_info_.version_ = readUint();
@@ -387,7 +388,6 @@ bool FootageStream::generateAudioPreview()
                                  preview_path.toStdString());
     if (system(cmd.c_str()) == 0) {
       success = loadWaveformFile(preview_path);
-      success = true;
     } else {
       qWarning() << "Failed to generate waveform, index:" << file_index;
     }
