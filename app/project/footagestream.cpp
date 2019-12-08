@@ -382,7 +382,6 @@ bool FootageStream::generateAudioPreview()
   if (file.exists() && file.size() > 0) {
     success = loadWaveformFile(preview_path);
     qDebug() << "Opened existing preview, index:" << file_index;
-    success = true;
   } else {
     const auto cmd = fmt::format(CMD_FORMAT, source_path_.toStdString(), file_index, EXTENSION, PIXELS_PER_SECOND,
                                  preview_path.toStdString());
