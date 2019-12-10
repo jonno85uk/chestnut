@@ -46,6 +46,7 @@
 #include "io/math.h"
 #include "transition.h"
 #include "io/path.h"
+#include "ui/presetaction.h"
 
 #include "effects/internal/transformeffect.h"
 #include "effects/internal/texteffect.h"
@@ -70,6 +71,15 @@ bool shaders_are_enabled = true;
 
 
 using panels::PanelManager;
+
+void closeMenu()
+{
+  for (const auto& w : qApp->topLevelWidgets()) {
+    if (auto menu = dynamic_cast<QMenu*>(w)) {
+      menu->close();
+    }
+  }
+}
 
 EffectPtr create_effect(ClipPtr c, const EffectMeta& em, const bool setup)
 {
@@ -576,8 +586,10 @@ void Effect::displayPresets()
   auto db(chestnut::Database::instance());
   const auto presets(db->getPresets(meta.name));
   for (const auto& name: presets) {
-    auto preset_action(menu.addAction(name));
-    connect(preset_action, &QAction::triggered, this, &Effect::loadPreset);
+    auto action = new chestnut::ui::PresetAction(name, &menu);
+    menu.addAction(action);
+    connect(action, &chestnut::ui::PresetAction::usePreset, this, &Effect::loadPreset);
+    connect(action, &chestnut::ui::PresetAction::deletePreset, this, &Effect::deletePreset);
   }
   menu.addSeparator();
   auto store_action(menu.addAction(tr("Store new preset")));
@@ -619,21 +631,23 @@ void Effect::storePreset()
 }
 
 
-void Effect::loadPreset()
+void Effect::loadPreset(QString name)
 {
-  const auto action(dynamic_cast<QAction*>(sender()));
-  Q_ASSERT(action);
-  const auto preset_name(action->text());
-
+  closeMenu();
   auto db(chestnut::Database::instance());
-  const auto params(db->getPresetParameters(meta.name, preset_name));
-
+  const auto params(db->getPresetParameters(meta.name, std::move(name)));
   // TODO: apply via an QUndoCommand
   for (const auto& [row_name, row_params] : params.toStdMap()) {
     setEffectRow(row_name, row_params);
   }
-
   panels::PanelManager::sequenceViewer().reRender();
+}
+
+void Effect::deletePreset(QString name)
+{
+  closeMenu(); // TODO: maybe just update the menu
+  auto db(chestnut::Database::instance());
+  db->deletePreset(meta.name, std::move(name));
 }
 
 /**

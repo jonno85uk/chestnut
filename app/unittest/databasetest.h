@@ -38,6 +38,7 @@ class DatabaseTest : public QObject
     void testCaseAddDuplicate();
     void testCaseAddGet();
     void testCaseAddPresetSameNameDifferentEffect();
+    void testCaseDeletePreset();
 };
 
 #endif // DATABASETEST_H

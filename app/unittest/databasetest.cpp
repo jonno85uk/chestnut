@@ -115,3 +115,18 @@ void DatabaseTest::testCaseAddPresetSameNameDifferentEffect()
   EffectPreset preset2 {"spam", "bar4", params};
   QVERIFY(db->addNewPreset(preset2));
 }
+
+
+void DatabaseTest::testCaseDeletePreset()
+{
+  auto db = Database::instance(":memory:");
+  EffectPreset preset {"foodel", "bardel", {}};
+  preset.parameters_["row1del"].append(QPair<QString, QVariant>("spam", "eggs"));
+  preset.parameters_["row2del"].append(QPair<QString, QVariant>("egg", "bacon and spam"));
+  db->addNewPreset(preset);
+  auto presets = db->getPresets("foodel");
+  QVERIFY(presets.size() == 1);
+  db->deletePreset(preset.effect_name_, preset.preset_name_);
+  presets = db->getPresets("foodel");
+  QVERIFY(presets.empty());
+}

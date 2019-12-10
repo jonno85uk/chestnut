@@ -149,6 +149,26 @@ chestnut::EffectParametersType Database::getPresetParameters(QString effect_name
   return preset_params;
 }
 
+
+
+
+void Database::deletePreset(const QString& effect_name, const QString& preset_name)
+{
+  qInfo() << "Deleting preset, effect:" << effect_name << ", preset:" << preset_name;
+  const auto preset_id = presetId(effect_name, preset_name);
+  deletePresetParameters(preset_id);
+  const auto effect_id = effectId(effect_name);
+  QSqlQuery q(db_);
+  q.prepare("DELETE FROM presets "
+            "WHERE e_id=? AND name=?");
+  q.addBindValue(effect_id);
+  q.addBindValue(preset_name);
+  if (!q.exec()) {
+    qWarning() << q.lastError().text();
+    qDebug() << q.executedQuery();
+  }
+}
+
 const QSqlResult* Database::query(const QString& statement)
 {
   QSqlQuery q(db_);
@@ -234,6 +254,19 @@ bool Database::addNewParameterPreset(const int preset_id, const int row_id, cons
     return false;
   }
   return true;
+}
+
+
+void Database::deletePresetParameters(const int preset_id)
+{
+  QSqlQuery q(db_);
+  q.prepare("DELETE FROM preset_parameter "
+            "WHERE p_id=?");
+  q.addBindValue(preset_id);
+  if (!q.exec()) {
+    qWarning() << q.lastError().text();
+    qDebug() << q.executedQuery();
+  }
 }
 
 void Database::setupEffectsTable()

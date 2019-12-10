@@ -65,6 +65,12 @@ namespace chestnut
        * @return              Structure in which to setup an Effect
        */
       EffectParametersType getPresetParameters(QString effect_name, QString preset_name);
+      /**
+       * @brief               Remove Effect preset entry if it exists
+       * @param effect_name
+       * @param preset_name
+       */
+      void deletePreset(const QString& effect_name, const QString& preset_name);
 
     private:
       QSqlDatabase db_;
@@ -76,6 +82,7 @@ namespace chestnut
       int effectRowId(const QString& name, const int effect_id, const bool recurse=true);
       int presetId(QString effect_name, QString preset_name);
       bool addNewParameterPreset(const int preset_id, const int row_id, const QString& name, const QVariant& value);
+      void deletePresetParameters(const int preset_id);
   };
 }
 

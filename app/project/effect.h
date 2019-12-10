@@ -219,13 +219,7 @@ class Effect : public QObject,  public std::enable_shared_from_this<Effect>,
     void gizmo_move(EffectGizmoPtr& sender, const int x_movement, const int y_movement, const double timecode, const bool done);
     void gizmo_world_to_screen();
     bool are_gizmos_enabled() const;
-
     virtual void setupUi();
-
-
-
-
-
   public slots:
     virtual void field_changed();
   private slots:
@@ -236,7 +230,8 @@ class Effect : public QObject,  public std::enable_shared_from_this<Effect>,
     void reset();
     void displayPresets();
     void storePreset();
-    void loadPreset();
+    void loadPreset(QString name);
+    void deletePreset(QString name);
   protected:
     // superimpose functions
     virtual void redraw(double timecode);
