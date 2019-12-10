@@ -60,9 +60,11 @@ PresetAction::~PresetAction()
 
 void PresetAction::onDeleteButtonPress()
 {
+  Q_ASSERT(name_button_);
   emit deletePreset(name_button_->text());
 }
 void PresetAction::onPresetButtonPress()
 {
+  Q_ASSERT(name_button_);
   emit usePreset(name_button_->text());
 }
