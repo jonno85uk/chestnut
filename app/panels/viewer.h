@@ -96,7 +96,7 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
     void reset_all_audio();
     void update_parents(bool reload_fx = false);
 
-    MediaPtr getMedia();
+    MediaWPtr getMedia();
     SequencePtr getSequence();
     /**
      * Create a new marker of an object in the widget
@@ -143,7 +143,7 @@ class Viewer : public QDockWidget, public ui::MarkerDockWidget
     friend class ViewerTest;
 
     SequencePtr sequence_ {nullptr};
-    MediaPtr media_ {nullptr};
+    MediaWPtr media_;
 
     bool main_sequence {false};
     bool created_sequence {false};

@@ -83,8 +83,8 @@ bool SourceView::onDropEvent(QDropEvent& event) const
 void SourceView::addSubclipToProject(const QDropEvent& event) const
 {
   auto& viewer(panels::PanelManager::footageViewer());
-  const auto orig_media(viewer.getMedia());
-
+  const auto orig_media(viewer.getMedia().lock());
+  Q_ASSERT(orig_media);
   const auto drop_item(this->viewIndex(event.pos()));
   const auto parent_mda(std::invoke([&]{
     const auto mda(project_parent_.item_to_media(drop_item));

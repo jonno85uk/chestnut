@@ -531,7 +531,7 @@ void Viewer::resizeEvent(QResizeEvent *)
 }
 
 
-MediaPtr Viewer::getMedia()
+MediaWPtr Viewer::getMedia()
 {
   return media_;
 }
@@ -552,7 +552,9 @@ void Viewer::setMarker() const
 
   if (add_marker) {
     // TODO: create a thumbnail for this
-    e_undo_stack.push(new AddMarkerAction(media_->object<Footage>(), sequence_->playhead_, marker_name));
+    if (auto mda = media_.lock()) {
+      e_undo_stack.push(new AddMarkerAction(mda->object<Footage>(), sequence_->playhead_, marker_name));
+    }
   }
 }
 
@@ -886,25 +888,25 @@ SequencePtr Viewer::createFootageSequence(const MediaPtr& mda) const
 void Viewer::set_media(const MediaPtr& m)
 {
   main_sequence = false;
-  if (media_ != nullptr) {
-    if (media_ == m) {
+  if (auto mda = media_.lock()) {
+    if (mda == m) {
       // prevent assigning shared_ptr to itself
       return;
     }
   }
   media_ = m;
   clean_created_seq();
-  if (media_ != nullptr) {
-    switch (media_->type()) {
+  if (auto mda = media_.lock()) {
+    switch (mda->type()) {
       case MediaType::FOOTAGE:
-        sequence_ = createFootageSequence(media_);
+        sequence_ = createFootageSequence(mda);
         created_sequence = true;
         break;
       case MediaType::SEQUENCE:
-        sequence_ = media_->object<Sequence>();
+        sequence_ = mda->object<Sequence>();
         break;
       default:
-        qWarning() << "Unhandled media type" << static_cast<int>(media_->type());
+        qWarning() << "Unhandled media type" << static_cast<int>(mda->type());
         break;
     }//switch
   }

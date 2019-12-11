@@ -370,7 +370,7 @@ void TimelineWidget::dragEnterEvent(QDragEnterEvent *event)
   // Dragging footage from the media-viewer window
   else if (event->source() == PanelManager::footageViewer().viewer_widget) {
     if (PanelManager::footageViewer().getSequence() != global::sequence) { // don't allow nesting the same sequence
-      if (auto mda = PanelManager::footageViewer().getMedia()) {
+      if (auto mda = PanelManager::footageViewer().getMedia().lock()) {
         qDebug() << "Dragging from footage viewer to timeline, " << mda->name();
         media_list.append(mda);
         import_init = true;
