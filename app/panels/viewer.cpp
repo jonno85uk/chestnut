@@ -899,8 +899,13 @@ void Viewer::set_media(const MediaPtr& m)
   if (auto mda = media_.lock()) {
     switch (mda->type()) {
       case MediaType::FOOTAGE:
+      {
         sequence_ = createFootageSequence(mda);
         created_sequence = true;
+        auto ftg = mda->object<Footage>();
+        Q_ASSERT(ftg);
+        seek(ftg->in);
+      }
         break;
       case MediaType::SEQUENCE:
         sequence_ = mda->object<Sequence>();
