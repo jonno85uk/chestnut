@@ -286,6 +286,9 @@ void Viewer::seek(const int64_t p)
     qDebug() << "No assigned sequence";
     return;
   }
+  if (this == &PanelManager::sequenceViewer()) {
+    raise();
+  }
   pause();
   sequence_->playhead_ = p;
   bool update_fx = false;
